@@ -1,0 +1,58 @@
+# Node / Electron
+node_modules/
+dist/
+out/
+.vite/
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.Python
+
+# MediaPipe / ML models
+*.tflite
+*.pt
+*.pth
+*.onnx
+
+# Database
+*.sqlite
+*.db
+
+# Environment
+.env
+.env.local
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# AI agents
+.claude/
+.gemini/
+.codex/
+.cursor/
+AGENTS.md
+GEMINI.md
+CLAUDE.md
+.aider*
+.continue/
+.codeium/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
