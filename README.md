@@ -10,9 +10,9 @@ Electron (TypeScript)                    Python (CV Worker)
 │ Main Process         │   WebSocket    │ FastAPI Server       │
 │ ├─ Spawns Python     │◄──────────────►│ ├─ OpenCV capture    │
 │ ├─ Activity monitor  │   localhost    │ ├─ MediaPipe Face    │
-│ ├─ Session manager   │               │ ├─ MediaPipe Hands   │
-│ ├─ Notifications     │               │ └─ Phone detector    │
-│ └─ IPC to renderer   │               └──────────────────────┘
+│ ├─ Session manager   │                │ ├─ MediaPipe Hands   │
+│ ├─ Notifications     │                │ └─ Phone detector    │
+│ └─ IPC to renderer   │                └──────────────────────┘
 │                      │
 │ Renderer (React+TS)  │
 │ ├─ Dashboard         │
