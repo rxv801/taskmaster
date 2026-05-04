@@ -4,6 +4,7 @@ dist/
 out/
 .vite/
 *.tsbuildinfo
+*.local
 
 # Python
 __pycache__/
