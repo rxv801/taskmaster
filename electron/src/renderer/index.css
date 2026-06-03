@@ -1022,3 +1022,21 @@ a {
     flex: 1 1 0;
   }
 }
+
+
+
+/* Camera Status Dots */
+.camera-status-dot {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.camera-status-dot--connected {
+  background: var(--color-focused);
+}
+
+.camera-status-dot--error {
+  background: var(--color-distracted);
+}

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import CameraSetupStep from '../components/onboarding/CameraSetupStep'
-import DistractionOptionsStep from '../components/onboarding/DistractionOptionsStep'
-import FocusEnvironmentStep from '../components/onboarding/FocusEnvironmentStep'
+import CameraSetupStep from '../components/onboarding/OnboardingCameraSetup'
+import DistractionOptionsStep from '../components/onboarding/OnboardingAdditionalFunctions'
+import FocusEnvironmentStep from '../components/onboarding/WhitelistSelectionStep'
 import MenuPage from './MenuPage'
-import WelcomeStep from '../components/onboarding/WelcomeStep'
+import WelcomeStep from '../components/onboarding/OnboardingWelcome'
 
 type Direction = 'forward' | 'backward'
 

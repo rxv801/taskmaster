@@ -1,12 +1,44 @@
+// === camera setup ===
+import { useEffect, useRef, useState, } from "react";
+import { useCameraDevices } from "../../hooks/useCameraDevices";
+
 type CameraSetupStepProps = {
   onBack: () => void
   onContinue: () => void
 }
 
+// === UI for camera onboarding page ===
+
 export default function CameraSetupStep({
   onBack,
   onContinue,
 }: CameraSetupStepProps) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const {
+    cameras,
+    selectedCameraId,
+    selectCamera,
+    stream,
+    cameraStatus,
+  } = useCameraDevices();
+
+  const cameraStatusMessage = {
+    checking: "Status: checking camera",
+    connected: "Status: camera connected",
+    "no-camera": "Status: no camera detected",
+    "permission-denied": "Status: camera permission denied",
+    error: "Status: camera error",
+  }[cameraStatus];
+
+const isCameraConnected = cameraStatus === "connected";
+
+  useEffect(() => {
+    if (videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [stream]);
+
   return (
     <section className="onboarding-screen camera-setup-screen">
       <p className="status-pill onboarding-step-pill">Step 2</p>
@@ -14,6 +46,12 @@ export default function CameraSetupStep({
 
         <div className="camera-setup-panel surface-card">
           <div className="camera-preview-card">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+            />
             <div className="camera-preview-placeholder" aria-hidden="true">
               <div className="camera-placeholder-lens" />
               <div className="camera-placeholder-base" />
@@ -22,16 +60,29 @@ export default function CameraSetupStep({
           </div>
 
           <label className="camera-select-field">
+            
             <span>Camera</span>
-            <select defaultValue="built-in">
-              <option value="built-in">Built-in Camera</option>
-              <option value="external-usb">External USB Camera</option>
+            <select
+              value={selectedCameraId}
+              onChange={(e) => selectCamera(e.target.value)} 
+            >
+              {cameras.map((camera, index) => (
+                <option key={camera.deviceId} value={camera.deviceId}>
+                  {camera.label || `Camera ${index + 1}`}
+                </option>
+              ))}
             </select>
+
           </label>
 
           <div className="camera-status-line">
-            <span className="camera-status-dot" aria-hidden="true" />
-            <span>Status: camera connected</span>
+            <span
+              className={`camera-status-dot ${
+                isCameraConnected ? "camera-status-dot--connected" : "camera-status-dot--error"
+              }`}
+              aria-hidden="true"
+            />
+            <span>{cameraStatusMessage}</span>
           </div>
 
           <p className="camera-privacy-note muted-text">
