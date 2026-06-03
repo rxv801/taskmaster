@@ -5,7 +5,7 @@ import Dashboard from './components/Dashboard'
 import SessionControls from './components/SessionControls'
 import Settings from './components/Settings'
 import SessionHistory from './components/SessionHistory'
-import Onboarding from './components/Onboarding'
+import OnboardingPage from './pages/OnboardingPage'
 
 function Sidebar() {
   return (
@@ -36,7 +36,7 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<Onboarding />} />
+        <Route path="/" element={<OnboardingPage />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/session" element={<Layout><SessionControls /></Layout>} />
         <Route path="/history" element={<Layout><SessionHistory /></Layout>} />
