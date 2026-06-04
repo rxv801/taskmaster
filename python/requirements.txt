@@ -9,7 +9,8 @@
 
 # --- Computer vision (needed now: phone + gaze detection) ---
 opencv-python>=4.9          # webcam capture + image ops
-mediapipe>=0.10.9           # hand landmarks (phone), face mesh (gaze)
+mediapipe>=0.10.9           # face mesh for gaze detection (planned)
+onnxruntime>=1.17           # runs the YOLOX phone-detection model (local, MIT)
 numpy>=1.26,<2.0            # array math; pinned <2 for MediaPipe compatibility
 
 # --- WebSocket server (needed later: Electron <-> Python bridge) ---

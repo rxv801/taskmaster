@@ -40,10 +40,13 @@ on exit.
 ```
 python/
 ├── main.py                 # FastAPI + WebSocket server (not implemented yet)
+├── models/                 # detection model files (gitignored; fetched by setup.sh)
+│   └── yolox_s.onnx        # YOLOX-S phone detector (Apache-2.0)
 └── cv/
     ├── camera.py           # owns the webcam handle: start / read / stop
     ├── detection_loop.py   # the loop: grab frame -> run detectors -> emit result
-    ├── phone_detector.py   # detect_phone(frame) -> event dict (placeholder for now)
+    ├── phone_detector.py   # detect_phone(frame) -> event dict (YOLOX via onnxruntime)
+    ├── phone_detect_test.py# manual visual test: draws boxes on the webcam feed
     └── gaze_detector.py    # gaze/face detection (planned)
 ```
 
@@ -72,6 +75,19 @@ Every detector returns a dict matching the WebSocket protocol in
   "confidence": float, "timestamp": int }   # timestamp = ms since epoch
 ```
 
-`phone_detector.detect_phone()` is currently a **placeholder** that always
-returns `status: "none"`. The real MediaPipe Hands implementation slots in
-behind the same function signature, so nothing that calls it has to change.
+### Phone detection
+
+`phone_detector.detect_phone()` runs **YOLOX-S** (general COCO detector,
+Apache-2.0) locally via **onnxruntime** (MIT), and reports the `cell phone`
+class. Both are permissively licensed and bundle into a shipped app — no
+PyTorch, no AGPL (unlike Ultralytics YOLO).
+
+- `find_phones(frame)` → list of `(x1, y1, x2, y2, score)` boxes (perception).
+- `detect_phone(frame)` → the protocol event above.
+
+The detector is **perception only** — it answers "is there a phone in this
+frame?". Turning that into a *distracted* state (phone visible for N seconds)
+is policy that belongs in the loop/state layer, not here.
+
+The model file (`models/yolox_s.onnx`, ~34 MB) is gitignored and downloaded
+by `setup.sh`.

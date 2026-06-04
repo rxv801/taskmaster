@@ -42,6 +42,18 @@ echo "    installing Python dependencies"
 python/.venv/bin/pip install --upgrade pip
 python/.venv/bin/pip install -r python/requirements.txt
 
+# Download the phone-detection model (YOLOX-S, Apache-2.0). It is gitignored
+# (~34 MB), so a fresh clone needs to fetch it once.
+PHONE_MODEL="python/models/yolox_s.onnx"
+if [ ! -f "$PHONE_MODEL" ]; then
+  echo "    downloading phone-detection model (YOLOX-S)"
+  mkdir -p python/models
+  curl -sSL -o "$PHONE_MODEL" \
+    "https://github.com/Megvii-BaseDetection/YOLOX/releases/download/0.1.1rc0/yolox_s.onnx"
+else
+  echo "    phone-detection model already present"
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Electron app
 # ---------------------------------------------------------------------------
