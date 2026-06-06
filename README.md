@@ -57,11 +57,15 @@ taskmaster/
 │       └── preload/
 │           └── index.ts
 ├── python/
+│   ├── README.md              # CV worker docs
+│   ├── requirements.txt       # Python deps (installed by setup.sh)
 │   ├── main.py                # FastAPI + WebSocket server
 │   └── cv/
-│       ├── camera.py
-│       ├── gaze_detector.py
-│       └── phone_detector.py
+│       ├── camera.py          # webcam capture (owns the camera handle)
+│       ├── detection_loop.py  # camera -> detectors -> events loop
+│       ├── phone_detector.py  # phone-in-frame detection
+│       └── gaze_detector.py   # gaze/face detection (planned)
+├── setup.sh                   # one-shot install for Python + Electron
 ├── PLAN.md
 └── README.md
 ```
@@ -69,30 +73,50 @@ taskmaster/
 ## Prerequisites
 
 - Node.js >= 18
-- Python >= 3.10
+- **Python 3.11** (MediaPipe has no wheels for 3.13/3.14 yet)
 - A webcam
 
 ## Setup
 
-### Python backend
+One command installs both the Python CV worker and the Electron app:
 
 ```bash
-cd python
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
+./setup.sh
 ```
 
-### Electron app
+It creates the Python venv at `python/.venv` (Python 3.11), installs
+`requirements.txt`, and runs `npm install` in `electron/`.
+
+<details>
+<summary>Manual setup (if you prefer)</summary>
 
 ```bash
+# Python CV worker
+cd python
+python3.11 -m venv .venv
+source .venv/bin/activate    # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+cd ..
+
+# Electron app
 cd electron
 npm install
 ```
 
+</details>
+
 ## Development
 
-Start the Python CV server:
+Run the CV detection loop directly (current entry point while the
+WebSocket server is being built):
+
+```bash
+cd python
+source .venv/bin/activate
+python cv/detection_loop.py        # Ctrl+C to stop
+```
+
+Later, the FastAPI + WebSocket server will be the entry point instead:
 
 ```bash
 cd python
