@@ -2,7 +2,6 @@ name: Electron CI
 
 on:
   push:
-    branches: [main, lucas/onboarding]
     paths:
       - "electron/**"
       - ".github/workflows/electron-ci.yml"
@@ -11,7 +10,7 @@ on:
     paths:
       - "electron/**"
       - ".github/workflows/electron-ci.yml"
-
+    
 jobs:
   electron-checks:
     name: Install, link, and build Electron app
