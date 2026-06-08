@@ -1,0 +1,19 @@
+# Taskmaster — Python CV worker dependencies
+# Built/tested on Python 3.11 (MediaPipe has no wheels for 3.13/3.14 yet).
+#
+# Installed for you by ./setup.sh. To do it manually:
+#   cd python
+#   python3.11 -m venv .venv
+#   source .venv/bin/activate
+#   pip install -r requirements.txt
+
+# --- Computer vision (needed now: phone + gaze detection) ---
+opencv-python>=4.9          # webcam capture + image ops
+mediapipe>=0.10.9           # face mesh for gaze detection (planned)
+onnxruntime>=1.17           # runs the YOLOX phone-detection model (local, MIT)
+numpy>=1.26,<2.0            # array math; pinned <2 for MediaPipe compatibility
+
+# --- WebSocket server (needed later: Electron <-> Python bridge) ---
+fastapi>=0.110              # app + routing for the detection-event server
+uvicorn[standard]>=0.27     # ASGI server that runs FastAPI
+websockets>=12.0            # WebSocket transport to the Electron main process
