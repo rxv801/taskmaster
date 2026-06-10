@@ -18,7 +18,7 @@ import {
   getDefaultBrowserActivityRules,
   type BrowserActivityRule,
   type BrowserActivityRuleStatus,
-} from '../../shared/commonBrowserActivityRules.ts'
+} from '../../shared/browserActivity/commonBrowserActivityRules.ts'
 
 export type AppCategory = 'productivity' | 'distraction'
 export type AppRuleStatus = 'allowed' | 'blocked'
@@ -45,7 +45,7 @@ export type FocusEnvironmentSettings = {
 export type {
   BrowserActivityRule,
   BrowserActivityRuleStatus,
-} from '../../shared/commonBrowserActivityRules.ts'
+} from '../../shared/browserActivity/commonBrowserActivityRules.ts'
 
 type DetectedCommonApp = {
   id: string
