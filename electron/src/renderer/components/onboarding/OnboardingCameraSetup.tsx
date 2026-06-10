@@ -1,9 +1,5 @@
 // === camera setup ===
-<<<<<<< HEAD
 import { useEffect, useRef } from "react";
-=======
-import { useEffect, useRef, useState, } from "react";
->>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
 import { useCameraDevices } from "../../hooks/useCameraDevices";
 
 type CameraSetupStepProps = {

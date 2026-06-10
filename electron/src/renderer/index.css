@@ -1021,7 +1021,6 @@ a {
   .onboarding-fixed-actions .secondary-button {
     flex: 1 1 0;
   }
-<<<<<<< HEAD
 
   .browser-block-toggle {
     max-width: none;
@@ -1031,8 +1030,6 @@ a {
     grid-template-columns: minmax(0, 1fr);
   }
   
-=======
->>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
 }
 
 
@@ -1051,7 +1048,6 @@ a {
 
 .camera-status-dot--error {
   background: var(--color-distracted);
-<<<<<<< HEAD
 }
 
 
@@ -1196,6 +1192,4 @@ a {
 .focus-app-toggle input:focus-visible + span {
   outline: 2px solid var(--color-accent-bright);
   outline-offset: 3px;
-=======
->>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
 }
