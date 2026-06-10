@@ -1,3 +1,12 @@
+/**
+ * Camera setup onboarding screen.
+ *
+ * This screen lets the user preview and select the camera Taskmaster will use
+ * during focus sessions.
+ *
+ * The camera stream is owned by useCameraDevices. When this screen unmounts,
+ * the hook stops the stream so the camera turns off.
+ */
 // === camera setup ===
 import { useEffect, useRef } from "react";
 import { useCameraDevices } from "../../hooks/useCameraDevices";
@@ -33,6 +42,12 @@ export default function CameraSetupStep({
 
 const isCameraConnected = cameraStatus === "connected";
 
+  /**
+   * Attach the MediaStream from the hook to the video element.
+   *
+   * React cannot set srcObject directly through JSX, so this needs to be done
+   * imperatively through a ref.
+   */
   useEffect(() => {
     if (videoRef.current && stream) {
       videoRef.current.srcObject = stream;
@@ -63,8 +78,10 @@ const isCameraConnected = cameraStatus === "connected";
             
             <span>Camera</span>
             <select
+              // camera dropdown
               value={selectedCameraId}
-              onChange={(e) => selectCamera(e.target.value)} 
+              onChange={(e) => selectCamera(e.target.value)}
+              disabled={cameras.length === 0} 
             >
               {cameras.map((camera, index) => (
                 <option key={camera.deviceId} value={camera.deviceId}>
@@ -109,7 +126,7 @@ const isCameraConnected = cameraStatus === "connected";
           <button className="secondary-button" type="button" onClick={onBack}>
             Back
           </button>
-          <button className="primary-button" type="button" onClick={onContinue}>
+          <button className="primary-button" type="button" onClick={onContinue} disabled={!isCameraConnected}>
             Continue
           </button>
         </div>
