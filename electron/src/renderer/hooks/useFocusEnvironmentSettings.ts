@@ -1,8 +1,24 @@
+/**
+ * Shared focus environment settings hook.
+ *
+ * This hook owns the onboarding settings for:
+ * - selected main browser
+ * - whether the selected browser is blocked during focus sessions
+ * - detected desktop app rules
+ * - common browser activity rules
+ *
+ * UI components should stay mostly presentational and call this hook instead
+ * of owning local copies of the settings logic.
+ */
+
+
 import { useEffect, useState } from 'react'
+import { getDefaultBrowserOptions, getDefaultFocusApps, } from '../../shared/appDetection/commonApps.ts'
 import {
-  getDefaultBrowserOptions,
-  getDefaultFocusApps,
-} from '../../shared/appDetection/commonApps.ts'
+  getDefaultBrowserActivityRules,
+  type BrowserActivityRule,
+  type BrowserActivityRuleStatus,
+} from '../../shared/commonBrowserActivityRules.ts'
 
 export type AppCategory = 'productivity' | 'distraction'
 export type AppRuleStatus = 'allowed' | 'blocked'
@@ -19,21 +35,17 @@ export type BrowserOption = {
   name: string
 }
 
-export type BrowserActivityRuleStatus = 'allowed' | 'blocked' | 'ignored'
-
-export type BrowserActivityRule = {
-  id: string
-  label: string
-  matchText: string
-  status: BrowserActivityRuleStatus
-}
-
 export type FocusEnvironmentSettings = {
   selectedBrowserId: string
   blockSelectedBrowser: boolean
   appRules: FocusApp[]
   browserActivityRules: BrowserActivityRule[]
 }
+
+export type {
+  BrowserActivityRule,
+  BrowserActivityRuleStatus,
+} from '../../shared/commonBrowserActivityRules.ts'
 
 type DetectedCommonApp = {
   id: string
@@ -47,15 +59,24 @@ const FOCUS_ENVIRONMENT_SETTINGS_KEY = 'taskmaster:focusEnvironmentSettings'
 
 const defaultBrowserOptions: BrowserOption[] = getDefaultBrowserOptions()
 const defaultFocusApps: FocusApp[] = getDefaultFocusApps()
+const defaultBrowserActivityRules: BrowserActivityRule[] = getDefaultBrowserActivityRules()
 
+/**
+ * Creates the fallback settings used before the real app detector returns data.
+ *
+ * Desktop apps can later be replaced by detected installed apps.
+ * Browser activity rules are static defaults because websites are not installed
+ * programs.
+ */
 function createDefaultSettings(): FocusEnvironmentSettings {
   return {
     selectedBrowserId: defaultBrowserOptions[0]?.id ?? '',
     blockSelectedBrowser: false,
     appRules: defaultFocusApps,
-    browserActivityRules: [],
+    browserActivityRules: defaultBrowserActivityRules,
   }
 }
+
 
 function loadFocusEnvironmentSettings(): FocusEnvironmentSettings | null {
   const savedSettings = localStorage.getItem(FOCUS_ENVIRONMENT_SETTINGS_KEY)
@@ -72,12 +93,20 @@ function loadFocusEnvironmentSettings(): FocusEnvironmentSettings | null {
   }
 }
 
+
+/**
+ * Narrows detected apps to desktop app rules.
+ *
+ * Browser apps are handled separately as browser options, so this prevents
+ * TypeScript from treating the category as "browser" after filtering.
+ */
 function isDetectedFocusApp(
   app: DetectedCommonApp
 ): app is DetectedCommonApp & { category: AppCategory } {
   return app.category === 'productivity' || app.category === 'distraction'
 }
-// after this filter, category cannot be browser anymore
+// ====== \\
+
 
 function convertDetectedAppsToFocusApps(
   detectedApps: DetectedCommonApp[]
@@ -113,6 +142,14 @@ export function useFocusEnvironmentSettings() {
   const [browserOptions, setBrowserOptions] =
     useState<BrowserOption[]>(defaultBrowserOptions)
 
+
+
+  /**
+   * On first load, ask Electron main process to detect installed desktop apps.
+   *
+   * This only runs when there are no saved settings, so the user's previous
+   * allowed/blocked choices are not overwritten.
+   */
   useEffect(() => {
     async function loadDetectedApps() {
       if (hasSavedSettings) {
@@ -147,7 +184,11 @@ export function useFocusEnvironmentSettings() {
 
     loadDetectedApps()
   }, [hasSavedSettings])
+  // ===== \\
 
+  /**
+   * Derived desktop app groups for the desktop app whitelist UI.
+   */
   const productivityApps = settings.appRules.filter(
     (app) => app.category === 'productivity'
   )
@@ -155,9 +196,29 @@ export function useFocusEnvironmentSettings() {
   const distractionApps = settings.appRules.filter(
     (app) => app.category === 'distraction'
   )
+  // ===== \\
+
+  /**
+   * Browser activity groups shown by BrowserActivitySelectionStep.
+   *
+   * These are website/page rules, not installed desktop apps.
+   * AI tools are separated because they can be productive or distracting
+   * depending on the user's work.
+   */
+  const blockedBrowserActivityRules = settings.browserActivityRules.filter(
+    (rule) => rule.id !== 'ai-tools'
+  )
+
+  const flexibleBrowserActivityRules = settings.browserActivityRules.filter(
+    (rule) => rule.id === 'ai-tools'
+  )
 
   const shouldSplitAppRules = settings.appRules.length > 6
+  // ===== \\
 
+  /**
+   * Setting update helpers used by onboarding UI components.
+   */
   function setSelectedBrowserId(selectedBrowserId: string) {
     setSettings((currentSettings) => ({
       ...currentSettings,
@@ -186,6 +247,23 @@ export function useFocusEnvironmentSettings() {
     }))
   }
 
+  function updateBrowserActivityRuleStatus(
+    ruleId: string,
+    status: BrowserActivityRuleStatus
+  ) {
+    setSettings((currentSettings) => ({
+      ...currentSettings,
+      browserActivityRules: currentSettings.browserActivityRules.map((rule) =>
+        rule.id === ruleId
+          ? {
+              ...rule,
+              status,
+            }
+          : rule
+      ),
+    }))
+  }
+
   function saveFocusEnvironmentSettings() {
     localStorage.setItem(
       FOCUS_ENVIRONMENT_SETTINGS_KEY,
@@ -203,5 +281,8 @@ export function useFocusEnvironmentSettings() {
     setBlockSelectedBrowser,
     updateAppStatus,
     saveFocusEnvironmentSettings,
+    blockedBrowserActivityRules,
+    flexibleBrowserActivityRules,
+    updateBrowserActivityRuleStatus,
   }
 }

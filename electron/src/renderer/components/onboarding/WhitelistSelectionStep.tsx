@@ -1,3 +1,16 @@
+/**
+ * Desktop app whitelist step for onboarding.
+ *
+ * This screen lets the user choose which detected desktop apps should be
+ * treated as allowed or blocked during focus sessions.
+ *
+ * Important:
+ * - This file is only for installed desktop apps.
+ * - Browser tabs/websites such as YouTube, Gmail, Netflix, or ChatGPT
+ *   should be handled in a separate browser activity step later.
+ * - The detection and localStorage logic lives in useFocusEnvironmentSettings.
+ */
+
 import { useFocusEnvironmentSettings } from '../../hooks/useFocusEnvironmentSettings'
 import type {
   AppRuleStatus,
@@ -16,6 +29,16 @@ type FocusAppRuleSectionProps = {
   onUpdateAppStatus: (appId: string, status: AppRuleStatus) => void
 }
 
+/**
+ * Renders one group of desktop app rules.
+ *
+ * Example groups:
+ * - Productivity apps
+ * - Potential distractions
+ *
+ * Each app stays in its original group, but the user can toggle whether it is
+ * currently allowed or blocked during focus sessions.
+ */
 function FocusAppRuleSection({
   title,
   description,
@@ -61,6 +84,16 @@ function FocusAppRuleSection({
   )
 }
 
+/**
+ * Onboarding step for configuring desktop app focus rules.
+ *
+ * The user can:
+ * - Pick their main browser.
+ * - Decide whether the selected browser should be blocked entirely.
+ * - Mark detected desktop apps as allowed or blocked.
+ *
+ * Saving happens when the user presses Back or Continue.
+ */
 export default function FocusEnvironmentStep({
   onBack,
   onContinue,

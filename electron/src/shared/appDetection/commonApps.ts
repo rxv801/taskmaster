@@ -1,4 +1,13 @@
-//
+/**
+ * Common desktop app catalogue used by Taskmaster onboarding.
+ *
+ * These definitions describe known Windows apps that Taskmaster can try to
+ * detect on the user's computer.
+ *
+ * Browser websites/pages do not belong here. Browser activity rules live in:
+ * shared/browserActivity/commonBrowserActivityRules.ts
+ */
+
 export type CommonAppCategory = 'productivity' | 'distraction' | 'browser'
 
 export type CommonAppDefinition = {
@@ -112,7 +121,11 @@ export const COMMON_APPS: CommonAppDefinition[] = [
   },
 ]
 
-// Utility functions to get default app lists for onboarding
+
+/**
+ * Converts the common app catalogue into the desktop app rules shown during
+ * onboarding before real detection results are available.
+ */
 export type DefaultFocusApp = {
   id: string
   name: string
@@ -136,6 +149,11 @@ export function getDefaultFocusApps(): DefaultFocusApp[] {
     }))
 }
 
+
+/**
+ * Converts detected/common browser apps into options for the main browser
+ * dropdown in onboarding.
+ */
 export function getDefaultBrowserOptions(): DefaultBrowserOption[] {
   return COMMON_APPS
     .filter((app) => app.category === 'browser')

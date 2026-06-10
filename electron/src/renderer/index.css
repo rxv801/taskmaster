@@ -751,7 +751,7 @@ a {
   display: grid;
   align-content: start;
   gap: var(--space-md);
-  padding: clamp(var(--space-lg), 2.4vw, var(--space-xl));
+  padding: clamp(var(--space-lg), 2vw, var(--space-xl));
 }
 
 .allowed-environment-panel {
@@ -1069,7 +1069,7 @@ a {
   display: grid;
   align-content: start;
   gap: var(--space-sm);
-  padding: 0.85rem;
+  padding: 0.70rem;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-bg-elevated) 48%, transparent);
@@ -1105,7 +1105,7 @@ a {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-sm);
-  padding: 0.38rem 0.48rem;
+  padding: 0.30rem 0.48rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-bg-card) 66%, transparent);
@@ -1192,4 +1192,81 @@ a {
 .focus-app-toggle input:focus-visible + span {
   outline: 2px solid var(--color-accent-bright);
   outline-offset: 3px;
+}
+
+
+/* browser activity rules */
+.browser-activity-rule-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.browser-activity-rule-description {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+/* Browser activity onboarding step
+   This layout uses one column because website rules need more description text
+   than desktop app rules. */
+
+.browser-activity-panel {
+  max-width: 620px;
+}
+
+.browser-activity-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.browser-activity-rule-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.browser-activity-rule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.browser-activity-rule-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  min-height: 64px;
+  padding: 0.70rem 0.80rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.browser-activity-rule-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+  min-width: 0;
+}
+
+.browser-activity-rule-description {
+  max-width: 440px;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  opacity: 0.80;
+}
+
+@media (max-width: 760px) {
+  .browser-activity-panel {
+    max-width: 100%;
+  }
+
+  .browser-activity-rule-row {
+    grid-template-columns: 1fr;
+    align-items: flex-start;
+  }
 }
