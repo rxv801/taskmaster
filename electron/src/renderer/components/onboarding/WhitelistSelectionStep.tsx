@@ -1,14 +1,18 @@
+<<<<<<< HEAD
 import { useFocusEnvironmentSettings } from '../../hooks/useFocusEnvironmentSettings'
 import type {
   AppRuleStatus,
   FocusApp,
 } from '../../hooks/useFocusEnvironmentSettings'
 
+=======
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
 type FocusEnvironmentStepProps = {
   onBack: () => void
   onContinue: () => void
 }
 
+<<<<<<< HEAD
 type FocusAppRuleSectionProps = {
   title: string
   description: string
@@ -60,11 +64,24 @@ function FocusAppRuleSection({
     </div>
   )
 }
+=======
+const browserItems = [
+  { label: 'Chrome: GitHub', allowed: true },
+  { label: 'Chrome: YouTube', allowed: false },
+  { label: 'Chrome: OnTrack', allowed: true },
+]
+
+const appItems = [
+  { label: 'VS Code', allowed: true },
+  { label: 'Discord', allowed: false },
+]
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
 
 export default function FocusEnvironmentStep({
   onBack,
   onContinue,
 }: FocusEnvironmentStepProps) {
+<<<<<<< HEAD
   const {
     settings,
     browserOptions,
@@ -91,6 +108,11 @@ export default function FocusEnvironmentStep({
     <section className="onboarding-screen focus-environment-screen">
       <p className="status-pill onboarding-step-pill">Step 3</p>
 
+=======
+  return (
+    <section className="onboarding-screen focus-environment-screen">
+      <p className="status-pill onboarding-step-pill">Step 3</p>
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
       <div className="focus-environment-layout">
         <header className="focus-environment-header">
           <div className="onboarding-header">
@@ -98,6 +120,7 @@ export default function FocusEnvironmentStep({
               Focus environment
             </h1>
             <p className="onboarding-subtitle">
+<<<<<<< HEAD
               Choose which apps are allowed during your deep work sessions.
             </p>
           </div>
@@ -106,12 +129,22 @@ export default function FocusEnvironmentStep({
             Taskmaster checks the active app during focus sessions. Apps not
             recognised yet will be marked as unknown and can be reviewed after
             the session.
+=======
+              Choose which apps or tabs are allowed during your deep work
+              sessions.
+            </p>
+          </div>
+          <p className="focus-environment-explainer muted-text">
+            Taskmaster will use this list to understand when you are working and
+            when you might be drifting.
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
           </p>
         </header>
 
         <section className="allowed-environment-panel surface-card">
           <div className="allowed-panel-top">
             <label className="focus-select-field">
+<<<<<<< HEAD
               <span>Main browser</span>
               <select
                 value={settings.selectedBrowserId}
@@ -163,10 +196,50 @@ export default function FocusEnvironmentStep({
               apps={distractionApps}
               onUpdateAppStatus={updateAppStatus}
             />
+=======
+              <span>Browser</span>
+              <select defaultValue="chrome">
+                <option value="chrome">Chrome</option>
+                <option value="edge">Edge</option>
+                <option value="opera">Opera</option>
+              </select>
+            </label>
+
+            <button className="secondary-button" type="button" disabled>
+              Recommended setup
+            </button>
+          </div>
+
+          <div className="allowed-groups" aria-label="Allowed apps and tabs">
+            <div className="allowed-group">
+              <p>Browser tabs</p>
+              <div className="allowed-compact-list">
+                {browserItems.map((item) => (
+                  <label className="allowed-compact-row" key={item.label}>
+                    <span>{item.label}</span>
+                    <input type="checkbox" defaultChecked={item.allowed} />
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="allowed-group">
+              <p>Apps</p>
+              <div className="allowed-compact-list">
+                {appItems.map((item) => (
+                  <label className="allowed-compact-row" key={item.label}>
+                    <span>{item.label}</span>
+                    <input type="checkbox" defaultChecked={item.allowed} />
+                  </label>
+                ))}
+              </div>
+            </div>
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
           </div>
         </section>
 
         <div className="onboarding-actions onboarding-fixed-actions">
+<<<<<<< HEAD
           <button className="secondary-button" type="button" onClick={handleBack}>
             Back
           </button>
@@ -175,10 +248,20 @@ export default function FocusEnvironmentStep({
             type="button"
             onClick={handleContinue}
           >
+=======
+          <button className="secondary-button" type="button" onClick={onBack}>
+            Back
+          </button>
+          <button className="primary-button" type="button" onClick={onContinue}>
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
             Continue
           </button>
         </div>
       </div>
     </section>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> ae417e1a78fe12271a3d75d458c23a6093090bee
