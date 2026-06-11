@@ -1,3 +1,9 @@
+/**
+ * First onboarding screen.
+ *
+ * This screen introduces Taskmaster and starts the setup flow. It does not own
+ * any onboarding settings, it only sends the user to the next step.
+ */
 type WelcomeStepProps = {
   onStartSetup: () => void
 }

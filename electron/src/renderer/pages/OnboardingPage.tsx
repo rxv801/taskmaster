@@ -1,9 +1,17 @@
+/**
+ * Main onboarding flow controller.
+ *
+ * This page owns the current onboarding step, transition direction, and screen
+ * animations. Individual onboarding screens should keep their own UI focused
+ * and receive only navigation callbacks from this page.
+ */
 import { useEffect, useRef, useState } from 'react'
 import CameraSetupStep from '../components/onboarding/OnboardingCameraSetup'
 import DistractionOptionsStep from '../components/onboarding/OnboardingAdditionalFunctions'
 import FocusEnvironmentStep from '../components/onboarding/WhitelistSelectionStep'
 import MenuPage from './MenuPage'
 import WelcomeStep from '../components/onboarding/OnboardingWelcome'
+import BrowserActivitySelectionStep from '../components/onboarding/BrowserActivitySelectionStep'
 
 type Direction = 'forward' | 'backward'
 
@@ -11,6 +19,7 @@ const lightStateByStep = [
   'hero',
   'top-right',
   'top-left',
+  'ambient',
   'ambient',
   'off',
 ] as const
@@ -48,6 +57,7 @@ export default function OnboardingPage() {
     }, 700)
   }
 
+  
   function renderStep(stepToRender: number) {
     if (stepToRender === 0) {
       return <WelcomeStep onStartSetup={() => goToStep(1)} />
@@ -73,9 +83,18 @@ export default function OnboardingPage() {
 
     if (stepToRender === 3) {
       return (
-        <DistractionOptionsStep
+        <BrowserActivitySelectionStep
           onBack={() => goToStep(2)}
-          onFinish={() => goToStep(4)}
+          onContinue={() => goToStep(4)}
+        />
+      )
+    }
+
+    if (stepToRender === 4) {
+      return (
+        <DistractionOptionsStep
+          onBack={() => goToStep(3)}
+          onFinish={() => goToStep(5)}
         />
       )
     }
