@@ -13,7 +13,7 @@ Run it:
 Press 'q' (video window focused) or Ctrl+C to quit.
 """
 
-import cv2
+import cv2  
 
 import phone_detector
 
