@@ -5,6 +5,9 @@
 import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { registerIpcHandlers } from './ipc-handlers.ts'
+
+
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -32,6 +35,7 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     webPreferences: {
+      preload: path.join(__dirname, '../preload/index.js'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -40,7 +44,9 @@ function createWindow() {
   win.loadURL('http://localhost:5173')
 }
 
+
 app.whenReady().then(() => {
+  registerIpcHandlers()
   createWindow()
   createTray()
 })

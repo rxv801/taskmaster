@@ -1,3 +1,9 @@
+/**
+ * Final onboarding options screen.
+ *
+ * This screen is currently a placeholder for future focus-session guardrails.
+ * The options shown here are not fully wired into session behavior yet.
+ */
 type DistractionOptionsStepProps = {
   onBack: () => void
   onFinish: () => void
