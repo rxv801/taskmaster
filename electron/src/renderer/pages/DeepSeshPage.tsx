@@ -1,17 +1,30 @@
 // Main Deep Sesh screen shown after onboarding.
 // This page composes the Deep Sesh UI and keeps timer display text together.
 
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
 import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
+import { useFocusEnvironmentSettings } from '../hooks/useFocusEnvironmentSettings'
+import type {
+  ActivityMonitorAppRule,
+  ActivityMonitorState,
+} from '../../shared/activityMonitoring'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
   const timer = useDeepSeshTimer()
+  const { settings, browserOptions } = useFocusEnvironmentSettings()
+  const pauseTimer = timer.pause
+  const resumeTimer = timer.resume
+  const stopTimer = timer.stop
+  const [activityMonitorState, setActivityMonitorState] = useState<ActivityMonitorState>({
+    status: 'idle',
+    snapshot: null,
+  })
   const layoutClass = timer.isSessionActive
     ? 'deep-sesh-screen--active'
     : 'deep-sesh-screen--setup'
@@ -39,6 +52,37 @@ export default function DeepSeshPage() {
     breakMinutes: timer.breakMinutes,
     deepSeshMinutes: timer.deepSeshMinutes,
   })
+
+  /**
+   * Converts onboarding settings into the small rule payload Electron needs.
+   *
+   * Browser page/title rules stay out of scope here; this only classifies the
+   * foreground desktop app or browser app.
+   */
+  const activityMonitorStartOptions = useMemo(() => {
+    const selectedBrowser = browserOptions.find(
+      (browser) => browser.id === settings.selectedBrowserId
+    )
+    const browserRule: ActivityMonitorAppRule[] = selectedBrowser
+      ? [
+          {
+            id: selectedBrowser.id,
+            name: selectedBrowser.name,
+            category: 'browser',
+            status: settings.blockSelectedBrowser ? 'blocked' : 'allowed',
+          },
+        ]
+      : []
+
+    return {
+      appRules: [...settings.appRules, ...browserRule],
+    }
+  }, [
+    browserOptions,
+    settings.appRules,
+    settings.blockSelectedBrowser,
+    settings.selectedBrowserId,
+  ])
 
   /**
    * Pushes the current timer snapshot to the mini window.
@@ -75,20 +119,47 @@ export default function DeepSeshPage() {
   useEffect(() => {
     return window.taskmaster?.onMiniTimerCommand((command) => {
       if (command === 'pause') {
-        timer.pause()
+        pauseTimer()
         return
       }
 
       if (command === 'resume') {
-        timer.resume()
+        resumeTimer()
         return
       }
 
       if (command === 'stop') {
-        timer.stop()
+        stopTimer()
       }
     })
-  }, [timer.pause, timer.resume, timer.stop])
+  }, [pauseTimer, resumeTimer, stopTimer])
+
+  /* Receives raw active-window snapshots from Electron main while the timer is active. */
+  useEffect(() => {
+    return window.taskmaster?.onActivityMonitorState((state) => {
+      setActivityMonitorState(state)
+    })
+  }, [])
+
+  /**
+   * Starts, pauses, or stops desktop monitoring to match the timer lifecycle.
+   *
+   * Monitoring remains passive in Phase 2. It classifies the active app, but
+   * does not warn, block, or enforce focus rules yet.
+   */
+  useEffect(() => {
+    if (timer.status === 'running') {
+      window.taskmaster?.startActivityMonitoring(activityMonitorStartOptions)
+      return
+    }
+
+    if (timer.status === 'paused') {
+      window.taskmaster?.pauseActivityMonitoring()
+      return
+    }
+
+    window.taskmaster?.stopActivityMonitoring()
+  }, [activityMonitorStartOptions, timer.status])
 
   /* Opens the mini timer window and reports IPC setup issues during development. */
   async function openMiniTimer() {
@@ -168,7 +239,9 @@ export default function DeepSeshPage() {
               {!timer.isSessionActive && <FocusEnvironmentSummary />}
             </div>
 
-            {timer.isSessionActive && <FocusMonitorPanel />}
+            {timer.isSessionActive && (
+              <FocusMonitorPanel activityMonitorState={activityMonitorState} />
+            )}
           </section>
         </main>
       </div>
