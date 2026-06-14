@@ -1,10 +1,8 @@
+// Temporary post-onboarding entry point.
+// For now, the menu route sends the user straight into the Deep Sesh UI.
+
+import DeepSeshPage from './DeepSeshPage'
+
 export default function MenuPage() {
-  return (
-    <section className="menu-placeholder-screen">
-      <div className="menu-placeholder-content">
-        <h1>Menu</h1>
-        <p>Main focus dashboard coming soon.</p>
-      </div>
-    </section>
-  )
+  return <DeepSeshPage />
 }
