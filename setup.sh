@@ -54,6 +54,18 @@ else
   echo "    phone-detection model already present"
 fi
 
+# Download the gaze model (MediaPipe FaceLandmarker, Apache-2.0). Gitignored
+# (~3.6 MB), fetched once on a fresh clone.
+GAZE_MODEL="python/models/face_landmarker.task"
+if [ ! -f "$GAZE_MODEL" ]; then
+  echo "    downloading gaze model (FaceLandmarker)"
+  mkdir -p python/models
+  curl -sSL -o "$GAZE_MODEL" \
+    "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task"
+else
+  echo "    gaze model already present"
+fi
+
 # ---------------------------------------------------------------------------
 # 2. Electron app
 # ---------------------------------------------------------------------------
