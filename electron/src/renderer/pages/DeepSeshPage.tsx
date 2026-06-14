@@ -1,18 +1,31 @@
 // Main Deep Sesh screen shown after onboarding.
-// This page owns the first MVP timer UI and uses a hook for timer logic.
+// This page composes the Deep Sesh UI and keeps timer display text together.
 
+import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
+import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
+import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
+import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
   const timer = useDeepSeshTimer()
 
+  /* Keep display-only derived values in the page so child components stay presentational. */
   const modeLabel = timer.mode === 'pomodoro' ? 'Pomodoro' : 'Deep Sesh'
   const isPomodoro = timer.mode === 'pomodoro'
   const deepSeshHours = Math.floor(timer.deepSeshMinutes / 60)
   const deepSeshRemainderMinutes = timer.deepSeshMinutes % 60
+  const deepSeshDurationLabel = formatDurationLabel(timer.deepSeshMinutes)
 
   const statusLabel = getStatusLabel(timer.status)
+  const phaseLabel = getPhaseLabel({
+    mode: timer.mode,
+    pomodoroPhase: timer.pomodoroPhase,
+    currentRound: timer.currentRound,
+    rounds: timer.rounds,
+  })
+
   const helperText = getHelperText({
     mode: timer.mode,
     status: timer.status,
@@ -48,199 +61,42 @@ export default function DeepSeshPage() {
       <div className="deep-sesh-shell">
         <main className="deep-sesh-main">
           <section className="deep-sesh-panel surface-card">
-            <div
-              className={`deep-sesh-mode-selector ${
-                timer.mode === 'deepSesh' ? 'deep-sesh-mode-selector--deep' : ''
-              }`}
-              aria-label="Session mode"
-            >
-              <span className="deep-sesh-mode-slider" aria-hidden="true" />
+            {/* Mode, timer, setup, and summary are split for reviewable UI changes. */}
+            <DeepSeshModeSelector
+              mode={timer.mode}
+              disabled={timer.isSessionActive}
+              onSelectMode={timer.selectMode}
+            />
 
-              <button
-                type="button"
-                className={`deep-sesh-mode-button ${
-                  timer.mode === 'pomodoro' ? 'deep-sesh-mode-button--active' : ''
-                }`}
-                disabled={timer.isSessionActive}
-                onClick={() => timer.selectMode('pomodoro')}
-              >
-                Pomodoro
-              </button>
-
-              <button
-                type="button"
-                className={`deep-sesh-mode-button ${
-                  timer.mode === 'deepSesh' ? 'deep-sesh-mode-button--active' : ''
-                }`}
-                disabled={timer.isSessionActive}
-                onClick={() => timer.selectMode('deepSesh')}
-              >
-                Deep Session
-              </button>
-            </div>
-
-            <div className="deep-sesh-timer-block">
-              <span className="status-pill">{statusLabel}</span>
-
-              <div className="deep-sesh-timer-copy">
-                <p className="deep-sesh-timer-mode">{modeLabel}</p>
-
-                <p className="deep-sesh-timer-phase muted-text">
-                  {isPomodoro ? (
-                    <>
-                    {timer.pomodoroPhase === 'focus' ? 'Focus block' : 'Break'} ·
-                    Round {timer.currentRound} of {timer.rounds}
-                    </>
-                  ) : (
-                    'Single focus block'
-                  )}
-                </p>
-
-                <p className="deep-sesh-timer-value">{timer.formattedTime}</p>
-                <p className="deep-sesh-timer-helper muted-text">{helperText}</p>
-              </div>
-
-              <div className="deep-sesh-timer-actions">
-                {(timer.status === 'idle' || timer.status === 'completed') && (
-                  <button type="button" className="primary-button" onClick={timer.start}>
-                    Start session
-                  </button>
-                )}
-
-                {timer.status === 'running' && (
-                  <button type="button" className="primary-button" onClick={timer.pause}>
-                    Pause
-                  </button>
-                )}
-
-                {timer.status === 'paused' && (
-                  <button type="button" className="primary-button" onClick={timer.resume}>
-                    Resume
-                  </button>
-                )}
-
-                {timer.status !== 'idle' && (
-                  <button type="button" className="secondary-button" onClick={timer.stop}>
-                    Stop
-                  </button>
-                )}
-
-                <button type="button" className="secondary-button" disabled>
-                  Pop out
-                </button>
-              </div>
-            </div>
+            <DeepSeshTimerCard
+              status={timer.status}
+              statusLabel={statusLabel}
+              modeLabel={modeLabel}
+              phaseLabel={phaseLabel}
+              formattedTime={timer.formattedTime}
+              helperText={helperText}
+              onStart={timer.start}
+              onPause={timer.pause}
+              onResume={timer.resume}
+              onStop={timer.stop}
+            />
 
             {/* Setup controls stay editable only before the session starts. */}
-            {isPomodoro ? (
-              <div className="deep-sesh-setting-grid">
-                <label className="deep-sesh-setting-field">
-                  <span>Focus length</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="180"
-                    value={timer.focusMinutes}
-                    disabled={!timer.canEditSettings}
-                    onChange={(event) =>
-                      timer.updatePomodoroSettings({
-                        focusMinutes: event.currentTarget.valueAsNumber,
-                      })
-                    }
-                  />
-                </label>
-
-                <label className="deep-sesh-setting-field">
-                  <span>Break length</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={timer.breakMinutes}
-                    disabled={!timer.canEditSettings}
-                    onChange={(event) =>
-                      timer.updatePomodoroSettings({
-                        breakMinutes: event.currentTarget.valueAsNumber,
-                      })
-                    }
-                  />
-                </label>
-
-                <label className="deep-sesh-setting-field">
-                  <span>Rounds</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="12"
-                    value={timer.rounds}
-                    disabled={!timer.canEditSettings}
-                    onChange={(event) =>
-                      timer.updatePomodoroSettings({
-                        rounds: event.currentTarget.valueAsNumber,
-                      })
-                    }
-                  />
-                </label>
-              </div>
-            ) : (
-              <div className="deep-sesh-setting-grid">
-                <label className="deep-sesh-setting-field">
-                  <span>Hours</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="8"
-                    value={deepSeshHours}
-                    disabled={!timer.canEditSettings}
-                    onChange={(event) =>
-                      timer.updateDeepSeshSettings(
-                        event.currentTarget.valueAsNumber * 60 +
-                          deepSeshRemainderMinutes,
-                      )
-                    }
-                  />
-                </label>
-
-                <label className="deep-sesh-setting-field">
-                  <span>Minutes</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="59"
-                    value={deepSeshRemainderMinutes}
-                    disabled={!timer.canEditSettings}
-                    onChange={(event) =>
-                      timer.updateDeepSeshSettings(
-                        deepSeshHours * 60 + event.currentTarget.valueAsNumber,
-                      )
-                    }
-                  />
-                </label>
-
-                <div className="deep-sesh-duration-summary">
-                  <span>Total</span>
-                  <strong>{formatDurationLabel(timer.deepSeshMinutes)}</strong>
-                </div>
-              </div>
-            )}
+            <DeepSeshSetupPanel
+              isPomodoro={isPomodoro}
+              canEditSettings={timer.canEditSettings}
+              focusMinutes={timer.focusMinutes}
+              breakMinutes={timer.breakMinutes}
+              rounds={timer.rounds}
+              deepSeshHours={deepSeshHours}
+              deepSeshRemainderMinutes={deepSeshRemainderMinutes}
+              deepSeshDurationLabel={deepSeshDurationLabel}
+              onUpdatePomodoroSettings={timer.updatePomodoroSettings}
+              onUpdateDeepSeshSettings={timer.updateDeepSeshSettings}
+            />
 
             {/* This summary stays static until we connect onboarding settings in a later step. */}
-            <div className="deep-sesh-summary-grid">
-              <div>
-                <span className="deep-sesh-summary-label">Main browser</span>
-                <strong>Not connected yet</strong>
-              </div>
-
-              <div>
-                <span className="deep-sesh-summary-label">Allowed apps</span>
-                <strong>Coming soon</strong>
-              </div>
-
-              <div>
-                <span className="deep-sesh-summary-label">Blocked apps</span>
-                <strong>Coming soon</strong>
-              </div>
-            </div>
+            <FocusEnvironmentSummary />
           </section>
         </main>
       </div>
@@ -255,6 +111,25 @@ function getStatusLabel(status: ReturnType<typeof useDeepSeshTimer>['status']) {
   if (status === 'completed') return 'Session complete'
 
   return 'Ready to focus'
+}
+
+/* Converts the active timer block into the short phase label. */
+function getPhaseLabel({
+  mode,
+  pomodoroPhase,
+  currentRound,
+  rounds,
+}: {
+  mode: ReturnType<typeof useDeepSeshTimer>['mode']
+  pomodoroPhase: ReturnType<typeof useDeepSeshTimer>['pomodoroPhase']
+  currentRound: number
+  rounds: number
+}) {
+  if (mode === 'deepSesh') return 'Single focus block'
+
+  const phaseLabel = pomodoroPhase === 'focus' ? 'Focus block' : 'Break'
+
+  return `${phaseLabel} · Round ${currentRound} of ${rounds}`
 }
 
 /* Explains what the current timer mode is doing. */
