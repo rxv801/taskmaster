@@ -6,6 +6,7 @@ import SessionControls from './components/SessionControls'
 import Settings from './components/Settings'
 import SessionHistory from './components/SessionHistory'
 import OnboardingPage from './pages/OnboardingPage'
+import MiniTimerPage from './pages/MiniTimerPage'
 
 function Sidebar() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route path="/" element={<OnboardingPage />} />
+        <Route path="/mini-timer" element={<MiniTimerPage />} />
         <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
         <Route path="/session" element={<Layout><SessionControls /></Layout>} />
         <Route path="/history" element={<Layout><SessionHistory /></Layout>} />

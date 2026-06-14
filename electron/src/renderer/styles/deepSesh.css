@@ -268,6 +268,149 @@
   opacity: 0.48;
 }
 
+.mini-timer-screen {
+  display: grid;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  padding: 0;
+  place-items: center;
+  color: var(--color-text-main);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 12rem),
+    var(--color-bg-main);
+  -webkit-app-region: drag;
+}
+
+.mini-timer-card {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  align-content: center;
+  gap: clamp(0.36rem, 2.4vh, var(--space-sm));
+  padding: clamp(0.72rem, 4.2vh, var(--space-md));
+  overflow: hidden;
+  background: transparent;
+}
+
+.mini-timer-window-controls {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 2;
+  display: flex;
+  gap: 0.3rem;
+  -webkit-app-region: no-drag;
+}
+
+.mini-timer-icon-button {
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--color-border) 70%, transparent);
+  border-radius: 999px;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-bg-elevated) 64%, transparent);
+  -webkit-app-region: no-drag;
+}
+
+.mini-timer-icon-button--window {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.mini-timer-icon-button--action {
+  width: clamp(2.15rem, 15vw, 2.65rem);
+  height: clamp(2.15rem, 15vw, 2.65rem);
+}
+
+.mini-timer-icon-button:hover,
+.mini-timer-icon-button--window:first-child {
+  color: var(--color-text-main);
+  border-color: var(--color-border-accent);
+}
+
+.mini-timer-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.mini-timer-icon-button svg {
+  width: 48%;
+  height: 48%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.mini-timer-kicker {
+  margin: 0;
+  color: var(--color-accent-bright);
+  font-size: clamp(0.66rem, 3vw, 0.76rem);
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.mini-timer-empty-state {
+  display: grid;
+  gap: 0.32rem;
+  text-align: center;
+}
+
+.mini-timer-empty-state h1 {
+  margin: 0;
+  font-size: clamp(1rem, 7vw, 1.45rem);
+}
+
+.mini-timer-empty-state p {
+  margin: 0;
+  font-size: clamp(0.74rem, 3.8vw, 0.86rem);
+}
+
+.mini-timer-copy {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+  text-align: center;
+}
+
+.mini-timer-copy h1 {
+  margin: 0;
+  font-size: clamp(2.45rem, 25vw, 5.4rem);
+  font-weight: 850;
+  line-height: 0.9;
+  white-space: nowrap;
+}
+
+.mini-timer-copy p {
+  overflow: hidden;
+  margin: 0;
+  font-size: clamp(0.68rem, 3.2vw, 0.78rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mini-timer-phase {
+  font-weight: 750;
+}
+
+.mini-timer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  justify-items: center;
+  gap: clamp(0.35rem, 3vw, 0.65rem);
+  -webkit-app-region: no-drag;
+}
+
+.mini-timer-actions--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+
 .deep-sesh-monitor-panel {
   position: relative;
   z-index: 1;
@@ -393,7 +536,7 @@
 .deep-sesh-summary-grid {
   display: grid;
   width: 100%;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-sm);
 }
 
@@ -455,6 +598,12 @@
 
   .deep-sesh-summary-grid div {
     min-height: 2.8rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .deep-sesh-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

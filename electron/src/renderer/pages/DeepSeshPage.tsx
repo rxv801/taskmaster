@@ -1,6 +1,7 @@
 // Main Deep Sesh screen shown after onboarding.
 // This page composes the Deep Sesh UI and keeps timer display text together.
 
+import { useEffect } from 'react'
 import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
 import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
@@ -38,6 +39,66 @@ export default function DeepSeshPage() {
     breakMinutes: timer.breakMinutes,
     deepSeshMinutes: timer.deepSeshMinutes,
   })
+
+  /**
+   * Pushes the current timer snapshot to the mini window.
+   *
+   * The renderer still owns timer state for now. Electron only opens the mini
+   * window and relays commands back to this page.
+   */
+  useEffect(() => {
+    window.taskmaster?.sendMiniTimerState({
+      mode: timer.mode,
+      status: timer.status,
+      isPinned: true,
+      modeLabel,
+      statusLabel,
+      phaseLabel,
+      formattedTime: timer.formattedTime,
+      helperText,
+    })
+  }, [
+    timer.mode,
+    timer.status,
+    timer.formattedTime,
+    modeLabel,
+    statusLabel,
+    phaseLabel,
+    helperText,
+  ])
+
+  /**
+   * Handles button presses from the mini timer window.
+   *
+   * These call the same hook actions as the full Deep Sesh screen controls.
+   */
+  useEffect(() => {
+    return window.taskmaster?.onMiniTimerCommand((command) => {
+      if (command === 'pause') {
+        timer.pause()
+        return
+      }
+
+      if (command === 'resume') {
+        timer.resume()
+        return
+      }
+
+      if (command === 'stop') {
+        timer.stop()
+      }
+    })
+  }, [timer.pause, timer.resume, timer.stop])
+
+  /* Opens the mini timer window and reports IPC setup issues during development. */
+  async function openMiniTimer() {
+    try {
+      await window.taskmaster?.openMiniTimer()
+    } catch (error) {
+      console.error('[Taskmaster] Could not open mini timer window:', error)
+    }
+  }
+
 
   return (
     <section className={`deep-sesh-screen ${layoutClass}`}>
@@ -84,6 +145,7 @@ export default function DeepSeshPage() {
                 onPause={timer.pause}
                 onResume={timer.resume}
                 onStop={timer.stop}
+                onOpenMiniTimer={openMiniTimer}
               />
 
               {/* Setup controls collapse during active sessions to keep focus on the timer. */}
