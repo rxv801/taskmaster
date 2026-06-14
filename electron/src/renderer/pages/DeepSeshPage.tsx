@@ -5,11 +5,15 @@ import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
 import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
+import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
   const timer = useDeepSeshTimer()
+  const layoutClass = timer.isSessionActive
+    ? 'deep-sesh-screen--active'
+    : 'deep-sesh-screen--setup'
 
   /* Keep display-only derived values in the page so child components stay presentational. */
   const modeLabel = timer.mode === 'pomodoro' ? 'Pomodoro' : 'Deep Sesh'
@@ -36,7 +40,7 @@ export default function DeepSeshPage() {
   })
 
   return (
-    <section className="deep-sesh-screen">
+    <section className={`deep-sesh-screen ${layoutClass}`}>
       <header className="deep-sesh-corner-title" aria-label="Taskmaster Deep Work">
         <p className="deep-sesh-app-name">Taskmaster</p>
         <h1>Deep Work</h1>
@@ -61,42 +65,48 @@ export default function DeepSeshPage() {
       <div className="deep-sesh-shell">
         <main className="deep-sesh-main">
           <section className="deep-sesh-panel surface-card">
-            {/* Mode, timer, setup, and summary are split for reviewable UI changes. */}
-            <DeepSeshModeSelector
-              mode={timer.mode}
-              disabled={timer.isSessionActive}
-              onSelectMode={timer.selectMode}
-            />
+            <div className="deep-sesh-session-column">
+              {/* Mode, timer, setup, and summary are split for reviewable UI changes. */}
+              <DeepSeshModeSelector
+                mode={timer.mode}
+                disabled={timer.isSessionActive}
+                onSelectMode={timer.selectMode}
+              />
 
-            <DeepSeshTimerCard
-              status={timer.status}
-              statusLabel={statusLabel}
-              modeLabel={modeLabel}
-              phaseLabel={phaseLabel}
-              formattedTime={timer.formattedTime}
-              helperText={helperText}
-              onStart={timer.start}
-              onPause={timer.pause}
-              onResume={timer.resume}
-              onStop={timer.stop}
-            />
+              <DeepSeshTimerCard
+                status={timer.status}
+                statusLabel={statusLabel}
+                modeLabel={modeLabel}
+                phaseLabel={phaseLabel}
+                formattedTime={timer.formattedTime}
+                helperText={helperText}
+                onStart={timer.start}
+                onPause={timer.pause}
+                onResume={timer.resume}
+                onStop={timer.stop}
+              />
 
-            {/* Setup controls stay editable only before the session starts. */}
-            <DeepSeshSetupPanel
-              isPomodoro={isPomodoro}
-              canEditSettings={timer.canEditSettings}
-              focusMinutes={timer.focusMinutes}
-              breakMinutes={timer.breakMinutes}
-              rounds={timer.rounds}
-              deepSeshHours={deepSeshHours}
-              deepSeshRemainderMinutes={deepSeshRemainderMinutes}
-              deepSeshDurationLabel={deepSeshDurationLabel}
-              onUpdatePomodoroSettings={timer.updatePomodoroSettings}
-              onUpdateDeepSeshSettings={timer.updateDeepSeshSettings}
-            />
+              {/* Setup controls collapse during active sessions to keep focus on the timer. */}
+              {!timer.isSessionActive && (
+                <DeepSeshSetupPanel
+                  isPomodoro={isPomodoro}
+                  canEditSettings={timer.canEditSettings}
+                  focusMinutes={timer.focusMinutes}
+                  breakMinutes={timer.breakMinutes}
+                  rounds={timer.rounds}
+                  deepSeshHours={deepSeshHours}
+                  deepSeshRemainderMinutes={deepSeshRemainderMinutes}
+                  deepSeshDurationLabel={deepSeshDurationLabel}
+                  onUpdatePomodoroSettings={timer.updatePomodoroSettings}
+                  onUpdateDeepSeshSettings={timer.updateDeepSeshSettings}
+                />
+              )}
 
-            {/* This summary stays static until we connect onboarding settings in a later step. */}
-            <FocusEnvironmentSummary />
+              {/* This summary stays static until we connect onboarding settings in a later step. */}
+              {!timer.isSessionActive && <FocusEnvironmentSummary />}
+            </div>
+
+            {timer.isSessionActive && <FocusMonitorPanel />}
           </section>
         </main>
       </div>
