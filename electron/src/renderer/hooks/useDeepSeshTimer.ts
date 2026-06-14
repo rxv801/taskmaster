@@ -1,7 +1,7 @@
 // Deep Sesh timer hook.
 // Keeps Pomodoro and Deep Sesh timer logic separate from the UI.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 export type DeepSeshMode = 'pomodoro' | 'deepSesh'
 export type DeepSeshStatus = 'idle' | 'running' | 'paused' | 'completed'
@@ -39,6 +39,7 @@ function formatSeconds(totalSeconds: number) {
 }
 
 export function useDeepSeshTimer() {
+  const endAtRef = useRef<number | null>(null)
   const [mode, setMode] = useState<DeepSeshMode>('pomodoro')
   const [status, setStatus] = useState<DeepSeshStatus>('idle')
 
@@ -60,8 +61,26 @@ export function useDeepSeshTimer() {
     return formatSeconds(remainingSeconds)
   }, [remainingSeconds])
 
+  /*
+   * Stores a wall-clock end timestamp instead of trusting interval ticks.
+   *
+   * Electron can throttle renderer timers while the window is backgrounded, so
+   * each tick recomputes remaining time from Date.now() instead of subtracting
+   * one second from previous state.
+   */
+  function startCountdownForSeconds(seconds: number) {
+    endAtRef.current = Date.now() + seconds * 1000
+    setRemainingSeconds(seconds)
+  }
+
+  /* Clears the active end timestamp when the timer is reset or completed. */
+  function clearCountdownEndTime() {
+    endAtRef.current = null
+  }
+
   /* Resets the timer to the beginning of the selected mode. */
   function resetTimerForMode(nextMode: DeepSeshMode) {
+    clearCountdownEndTime()
     setPomodoroPhase('focus')
     setCurrentRound(1)
 
@@ -77,6 +96,7 @@ export function useDeepSeshTimer() {
   function selectMode(nextMode: DeepSeshMode) {
     if (isSessionActive) return
 
+    clearCountdownEndTime()
     setMode(nextMode)
     setStatus('idle')
 
@@ -97,11 +117,11 @@ export function useDeepSeshTimer() {
     setCurrentRound(1)
 
     if (mode === 'pomodoro') {
-      setRemainingSeconds(minutesToSeconds(focusMinutes))
+      startCountdownForSeconds(minutesToSeconds(focusMinutes))
       return
     }
 
-    setRemainingSeconds(minutesToSeconds(deepSeshMinutes))
+    startCountdownForSeconds(minutesToSeconds(deepSeshMinutes))
   }
 
   /* Pauses the active countdown. */
@@ -115,6 +135,7 @@ export function useDeepSeshTimer() {
   function resume() {
     if (status !== 'paused') return
 
+    startCountdownForSeconds(remainingSeconds)
     setStatus('running')
   }
 
@@ -123,43 +144,68 @@ export function useDeepSeshTimer() {
     if (status === 'idle') return
 
     setStatus('idle')
+    clearCountdownEndTime()
     resetTimerForMode(mode)
   }
 
-  /* Ticks the countdown while the session is running. */
+  /* Ticks from wall-clock time so drift and background throttling cannot accumulate. */
   useEffect(() => {
-    if (status !== 'running') return
+    if (status !== 'running' || endAtRef.current === null) return
 
-    const intervalId = window.setInterval(() => {
-      setRemainingSeconds((seconds) => {
-        if (seconds > 1) {
-          return seconds - 1
-        }
-
-        // Timer reached zero, so move to the next session state.
-        if (mode === 'deepSesh') {
-          setStatus('completed')
-          return 0
-        }
-
-        if (pomodoroPhase === 'focus') {
-          setPomodoroPhase('break')
-          return minutesToSeconds(breakMinutes)
-        }
-
-        if (currentRound < rounds) {
-          setCurrentRound((round) => round + 1)
-          setPomodoroPhase('focus')
-          return minutesToSeconds(focusMinutes)
-        }
-
+    function finishCurrentBlock() {
+      // Timer reached zero, so move to the next session state.
+      if (mode === 'deepSesh') {
+        clearCountdownEndTime()
         setStatus('completed')
-        return 0
-      })
-    }, 1000)
+        setRemainingSeconds(0)
+        return
+      }
+
+      if (pomodoroPhase === 'focus') {
+        setPomodoroPhase('break')
+        startCountdownForSeconds(minutesToSeconds(breakMinutes))
+        return
+      }
+
+      if (currentRound < rounds) {
+        setCurrentRound((round) => round + 1)
+        setPomodoroPhase('focus')
+        startCountdownForSeconds(minutesToSeconds(focusMinutes))
+        return
+      }
+
+      clearCountdownEndTime()
+      setStatus('completed')
+      setRemainingSeconds(0)
+    }
+
+    function syncRemainingSecondsToClock() {
+      if (endAtRef.current === null) return
+
+      const secondsLeft = Math.max(
+        0,
+        Math.ceil((endAtRef.current - Date.now()) / 1000),
+      )
+
+      if (secondsLeft > 0) {
+        setRemainingSeconds(secondsLeft)
+        return
+      }
+
+      finishCurrentBlock()
+    }
+
+    syncRemainingSecondsToClock()
+
+    const intervalId = window.setInterval(syncRemainingSecondsToClock, 1000)
+
+    window.addEventListener('focus', syncRemainingSecondsToClock)
+    document.addEventListener('visibilitychange', syncRemainingSecondsToClock)
 
     return () => {
       window.clearInterval(intervalId)
+      window.removeEventListener('focus', syncRemainingSecondsToClock)
+      document.removeEventListener('visibilitychange', syncRemainingSecondsToClock)
     }
   }, [
     status,
@@ -201,6 +247,7 @@ export function useDeepSeshTimer() {
     setRounds(nextRounds)
 
     if (mode === 'pomodoro') {
+      clearCountdownEndTime()
       setStatus('idle')
       setPomodoroPhase('focus')
       setCurrentRound(1)
@@ -217,6 +264,7 @@ export function useDeepSeshTimer() {
     setDeepSeshMinutes(nextMinutes)
 
     if (mode === 'deepSesh') {
+      clearCountdownEndTime()
       setStatus('idle')
       setRemainingSeconds(minutesToSeconds(nextMinutes))
     }

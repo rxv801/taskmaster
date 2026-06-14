@@ -12,6 +12,9 @@ import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
   const timer = useDeepSeshTimer()
+  const pauseTimer = timer.pause
+  const resumeTimer = timer.resume
+  const stopTimer = timer.stop
   const layoutClass = timer.isSessionActive
     ? 'deep-sesh-screen--active'
     : 'deep-sesh-screen--setup'
@@ -75,20 +78,20 @@ export default function DeepSeshPage() {
   useEffect(() => {
     return window.taskmaster?.onMiniTimerCommand((command) => {
       if (command === 'pause') {
-        timer.pause()
+        pauseTimer()
         return
       }
 
       if (command === 'resume') {
-        timer.resume()
+        resumeTimer()
         return
       }
 
       if (command === 'stop') {
-        timer.stop()
+        stopTimer()
       }
     })
-  }, [timer.pause, timer.resume, timer.stop])
+  }, [pauseTimer, resumeTimer, stopTimer])
 
   /* Opens the mini timer window and reports IPC setup issues during development. */
   async function openMiniTimer() {
