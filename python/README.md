@@ -41,13 +41,15 @@ on exit.
 python/
 ├── main.py                 # FastAPI + WebSocket server (not implemented yet)
 ├── models/                 # detection model files (gitignored; fetched by setup.sh)
-│   └── yolox_s.onnx        # YOLOX-S phone detector (Apache-2.0)
+│   ├── yolox_s.onnx        # YOLOX-S phone detector (Apache-2.0)
+│   └── face_landmarker.task# MediaPipe FaceLandmarker for gaze (Apache-2.0)
 └── cv/
     ├── camera.py           # owns the webcam handle: start / read / stop
     ├── detection_loop.py   # the loop: grab frame -> run detectors -> emit result
     ├── phone_detector.py   # detect_phone(frame) -> event dict (YOLOX via onnxruntime)
     ├── phone_detect_test.py# manual visual test: draws boxes on the webcam feed
-    └── gaze_detector.py    # gaze/face detection (planned)
+    ├── gaze_detector.py    # detect_gaze(frame) -> event dict (MediaPipe head pose)
+    └── gaze_detect_test.py # manual visual test: FOCUSED/DISTRACTED + head angles
 ```
 
 ### Design: why `camera.py` and `detection_loop.py` are separate
@@ -91,3 +93,28 @@ is policy that belongs in the loop/state layer, not here.
 
 The model file (`models/yolox_s.onnx`, ~34 MB) is gitignored and downloaded
 by `setup.sh`.
+
+### Gaze detection
+
+`gaze_detector.detect_gaze()` decides whether the user is looking at the
+screen, using **head pose** (which way the face points) from **MediaPipe
+FaceLandmarker** (Apache-2.0, local). Head pose is far more robust than
+eye/iris gaze to lighting, glasses, and distance.
+
+- `analyze_gaze(frame)` → detailed facts (angles, offsets, face count) for the test UI.
+- `detect_gaze(frame)` → the protocol event (`focused` / `distracted`).
+- `calibrate(frame)` / `reset_reference()` → manage the reference pose.
+
+Key behaviours:
+- **Auto-calibration** — the first frame with a face becomes the "looking at
+  screen" reference (0/0); later frames are judged as +/- deviation from it.
+  This makes it work with any camera angle, including off to the side.
+- **Multi-person tracking** — detects up to `NUM_FACES`, locks onto the
+  intended user (biggest/closest face), and follows them by position so other
+  people entering the frame don't steal the signal.
+- **Perception only** — answers "looking at screen *right now*?". The
+  "distracted after N seconds of looking away" timer is policy for the
+  loop/state layer.
+
+The model file (`models/face_landmarker.task`, ~3.6 MB) is gitignored and
+downloaded by `setup.sh`.
