@@ -15,4 +15,28 @@ contextBridge.exposeInMainWorld('taskmaster', {
     request: () => ipcRenderer.send('taskmaster:cv-request'),
     release: () => ipcRenderer.send('taskmaster:cv-release'),
   },
+
+  openMiniTimer: () => ipcRenderer.invoke('taskmaster:mini-timer-open'),
+  sendMiniTimerState: (state) =>
+    ipcRenderer.send('taskmaster:mini-timer-state', state),
+  sendMiniTimerCommand: (command) =>
+    ipcRenderer.send('taskmaster:mini-timer-command', command),
+  onMiniTimerState: (callback) => {
+    const listener = (_event, state) => callback(state)
+
+    ipcRenderer.on('taskmaster:mini-timer-state', listener)
+
+    return () => {
+      ipcRenderer.removeListener('taskmaster:mini-timer-state', listener)
+    }
+  },
+  onMiniTimerCommand: (callback) => {
+    const listener = (_event, command) => callback(command)
+
+    ipcRenderer.on('taskmaster:mini-timer-command', listener)
+
+    return () => {
+      ipcRenderer.removeListener('taskmaster:mini-timer-command', listener)
+    }
+  },
 })
