@@ -427,6 +427,11 @@
   animation: deep-sesh-monitor-enter 420ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
 }
 
+.deep-sesh-monitor-panel--warning {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 72%, var(--color-border));
+  box-shadow: 0 1rem 2rem color-mix(in srgb, var(--color-accent-bright) 8%, transparent);
+}
+
 .deep-sesh-monitor-status {
   display: grid;
   gap: 0.45rem;
@@ -448,6 +453,31 @@
   gap: var(--space-sm);
 }
 
+.deep-sesh-monitor-current {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+  padding: 0.8rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-border-accent) 68%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-accent) 10%, var(--color-bg-card));
+}
+
+.deep-sesh-monitor-current span {
+  color: var(--color-accent-bright);
+  font-size: clamp(0.7rem, 0.66vw, 0.78rem);
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.deep-sesh-monitor-current strong {
+  overflow: hidden;
+  color: var(--color-text-main);
+  font-size: clamp(1rem, 1vw, 1.15rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .deep-sesh-monitor-list div {
   display: grid;
   gap: 0.12rem;
@@ -464,8 +494,27 @@
 }
 
 .deep-sesh-monitor-list strong {
+  overflow: hidden;
   color: var(--color-text-main);
   font-size: clamp(0.8rem, 0.76vw, 0.9rem);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deep-sesh-monitor-rule--allowed {
+  border-color: color-mix(in srgb, #4ade80 42%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--blocked {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 68%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--neutral {
+  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--unknown {
+  border-color: color-mix(in srgb, var(--color-text-muted) 38%, var(--color-border));
 }
 
 .deep-sesh-setting-grid {

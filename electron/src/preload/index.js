@@ -13,6 +13,21 @@ contextBridge.exposeInMainWorld('taskmaster', {
     ipcRenderer.send('taskmaster:mini-timer-state', state),
   sendMiniTimerCommand: (command) =>
     ipcRenderer.send('taskmaster:mini-timer-command', command),
+  startActivityMonitoring: (options) =>
+    ipcRenderer.send('taskmaster:activity-monitor-start', options),
+  pauseActivityMonitoring: () =>
+    ipcRenderer.send('taskmaster:activity-monitor-pause'),
+  stopActivityMonitoring: () =>
+    ipcRenderer.send('taskmaster:activity-monitor-stop'),
+  onActivityMonitorState: (callback) => {
+    const listener = (_event, state) => callback(state)
+
+    ipcRenderer.on('taskmaster:activity-monitor-state', listener)
+
+    return () => {
+      ipcRenderer.removeListener('taskmaster:activity-monitor-state', listener)
+    }
+  },
   onMiniTimerState: (callback) => {
     const listener = (_event, state) => callback(state)
 
