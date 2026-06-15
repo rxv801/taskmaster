@@ -11,6 +11,7 @@ type DeepSeshTimerCardProps = {
   onPause: () => void
   onResume: () => void
   onStop: () => void
+  onOpenMiniTimer: () => void
 }
 
 /* Displays the active countdown and maps timer status to the visible controls. */
@@ -25,7 +26,10 @@ export default function DeepSeshTimerCard({
   onPause,
   onResume,
   onStop,
+  onOpenMiniTimer,
 }: DeepSeshTimerCardProps) {
+  const canOpenMiniTimer = status === 'running' || status === 'paused'
+
   return (
     <div className="deep-sesh-timer-block">
       <span className="status-pill">{statusLabel}</span>
@@ -62,7 +66,12 @@ export default function DeepSeshTimerCard({
           </button>
         )}
 
-        <button type="button" className="secondary-button" disabled>
+        <button
+          type="button"
+          className="secondary-button"
+          disabled={!canOpenMiniTimer}
+          onClick={onOpenMiniTimer}
+        >
           Pop out
         </button>
       </div>
