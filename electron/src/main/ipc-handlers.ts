@@ -1,7 +1,8 @@
-// Registers all ipcMain.handle() and ipcMain.on() listeners. 
-// This is the entry point for every message the renderer sends — start session, save settings, get history, etc.import { ipcMain } from 'electron'
+// Registers all ipcMain.handle() and ipcMain.on() listeners.
+// This is the entry point for every message the renderer sends — start session, save settings, get history, etc.
 import { ipcMain } from 'electron'
 import { detectCommonWindowsApps } from './appDetection/detectCommonWindowsApps.ts'
+import { requestPythonWorker, releasePythonWorker } from './python-bridge.ts'
 
 export function registerIpcHandlers() {
   ipcMain.removeHandler('taskmaster:detect-common-apps')
@@ -10,8 +11,16 @@ export function registerIpcHandlers() {
     const detectedApps = detectCommonWindowsApps()
 
     console.log('[Taskmaster] Detected common apps:')
-    console.log(JSON.stringify(detectedApps, null, 2))  
+    console.log(JSON.stringify(detectedApps, null, 2))
 
     return detectedApps
   })
+
+  // On-demand CV worker control. The renderer fires these (fire-and-forget) when
+  // it starts/stops wanting detection; the worker is reference-counted in
+  // python-bridge.ts. removeAllListeners guards against double-registration.
+  ipcMain.removeAllListeners('taskmaster:cv-request')
+  ipcMain.removeAllListeners('taskmaster:cv-release')
+  ipcMain.on('taskmaster:cv-request', () => requestPythonWorker())
+  ipcMain.on('taskmaster:cv-release', () => releasePythonWorker())
 }

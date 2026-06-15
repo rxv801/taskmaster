@@ -8,4 +8,11 @@ console.log('Taskmaster preload loaded')
 
 contextBridge.exposeInMainWorld('taskmaster', {
   detectCommonApps: () => ipcRenderer.invoke('taskmaster:detect-common-apps'),
+
+  // On-demand CV worker control. request() before connecting to the worker's
+  // WebSocket, release() when done — each request must be paired with a release.
+  cv: {
+    request: () => ipcRenderer.send('taskmaster:cv-request'),
+    release: () => ipcRenderer.send('taskmaster:cv-release'),
+  },
 })

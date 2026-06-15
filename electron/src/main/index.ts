@@ -6,6 +6,7 @@ import { app, BrowserWindow, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import { registerIpcHandlers } from './ipc-handlers.ts'
+import { stopPythonWorker } from './python-bridge.ts'
 
 
 
@@ -47,6 +48,14 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerIpcHandlers()
+  // The CV worker is started on demand (see python-bridge.ts) when the renderer
+  // requests detection, not here — nothing runs while no session is active.
   createWindow()
   createTray()
+})
+
+// Safety net: force the worker down when the app quits, even if a consumer
+// never released it, so no Python process outlives the app.
+app.on('before-quit', () => {
+  stopPythonWorker()
 })

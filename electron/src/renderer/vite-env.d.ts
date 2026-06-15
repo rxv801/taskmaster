@@ -12,6 +12,10 @@ declare global {
   interface Window {
     taskmaster: {
       detectCommonApps: () => Promise<DetectedCommonApp[]>
+      cv: {
+        request: () => void
+        release: () => void
+      }
     }
   }
 }
