@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Taskmaster Browser Activity Prototype",
+  "description": "Dev-only bridge that sends the active tab title and URL to the local Taskmaster app while a focus session is active.",
+  "version": "0.1.0",
+  "permissions": ["tabs"],
+  "host_permissions": ["http://127.0.0.1:17382/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
