@@ -1,11 +1,20 @@
-// Dev-only Taskmaster browser activity bridge.
-// Privacy behavior: this service worker asks localhost whether monitoring is
-// active before reading the active tab URL/title. When Taskmaster says disabled,
-// no tab metadata is read or sent.
+// Taskmaster Browser Monitor service worker.
+// This file owns active-tab metadata collection for the browser extension.
+//
+// Privacy behavior:
+// - No external servers are used.
+// - No content scripts are used.
+// - Page content, cookies, form inputs, and the browsing history API are never read.
+// - The active tab URL/title is queried only after Taskmaster says monitoring is active.
+//
+// Transport is intentionally separated from tab collection so the same privacy
+// gate can work with the current dev localhost bridge and future Native Messaging.
 
 const BRIDGE_ORIGIN = 'http://127.0.0.1:17382'
 const STATUS_URL = `${BRIDGE_ORIGIN}/taskmaster-browser-monitor/status`
 const ACTIVITY_URL = `${BRIDGE_ORIGIN}/taskmaster-browser-monitor/activity`
+const NATIVE_HOST_NAME = 'com.taskmaster.browser_monitor'
+const TRANSPORT_MODE = 'native-messaging'
 const INTERNAL_URL_PREFIXES = [
   'chrome://',
   'edge://',
@@ -73,8 +82,30 @@ async function reportActiveTabIfMonitoring() {
   await sendActivity(payload)
 }
 
-// Asks the local Electron bridge whether browser monitoring is currently active.
+// Asks the active transport whether browser monitoring is currently enabled.
 async function isMonitoringEnabled() {
+  if (TRANSPORT_MODE === 'native-messaging') {
+    return isNativeMonitoringEnabled()
+  }
+
+  return isDevLocalhostMonitoringEnabled()
+}
+
+// Placeholder production status check. Phase 2 will wire this to the native host.
+async function isNativeMonitoringEnabled() {
+  try {
+    const response = await chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, {
+      type: 'taskmaster-browser-monitor-status',
+    })
+
+    return response?.enabled === true
+  } catch {
+    return false
+  }
+}
+
+// Dev-only localhost status check retained for local prototype testing.
+async function isDevLocalhostMonitoringEnabled() {
   try {
     const response = await fetch(STATUS_URL, { method: 'GET' })
 
@@ -115,8 +146,30 @@ function shouldIgnoreUrl(url) {
   return INTERNAL_URL_PREFIXES.some((prefix) => normalizedUrl.startsWith(prefix))
 }
 
-// Sends tab metadata to localhost only. Failures are expected when Taskmaster is closed.
+// Sends tab metadata through the active transport.
 async function sendActivity(payload) {
+  if (TRANSPORT_MODE === 'native-messaging') {
+    await sendNativeActivity(payload)
+    return
+  }
+
+  await sendDevLocalhostActivity(payload)
+}
+
+// Placeholder production sender. Phase 2 will add the native host implementation.
+async function sendNativeActivity(payload) {
+  try {
+    await chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, {
+      type: 'taskmaster-browser-activity',
+      payload,
+    })
+  } catch {
+    // Native Messaging is expected to be unavailable until the host is installed.
+  }
+}
+
+// Dev-only localhost sender. This is not the official production transport.
+async function sendDevLocalhostActivity(payload) {
   try {
     await fetch(ACTIVITY_URL, {
       method: 'POST',
