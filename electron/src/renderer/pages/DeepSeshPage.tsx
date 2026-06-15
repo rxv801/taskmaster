@@ -1,13 +1,14 @@
 // Main Deep Sesh screen shown after onboarding.
 // This page composes the Deep Sesh UI and keeps timer display text together.
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
 import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
+import type { BrowserActivityPayload } from '../../shared/browserActivity'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
@@ -15,6 +16,8 @@ export default function DeepSeshPage() {
   const pauseTimer = timer.pause
   const resumeTimer = timer.resume
   const stopTimer = timer.stop
+  const [browserActivity, setBrowserActivity] =
+    useState<BrowserActivityPayload | null>(null)
   const layoutClass = timer.isSessionActive
     ? 'deep-sesh-screen--active'
     : 'deep-sesh-screen--setup'
@@ -92,6 +95,22 @@ export default function DeepSeshPage() {
       }
     })
   }, [pauseTimer, resumeTimer, stopTimer])
+
+  /* Receives browser extension activity while the focus monitor is visible. */
+  useEffect(() => {
+    return window.taskmaster?.onBrowserActivity((activity) => {
+      setBrowserActivity(activity)
+    })
+  }, [])
+
+  /**
+   * Tells the local browser extension bridge when it may receive tab metadata.
+   *
+   * The extension checks this status before reading the active tab URL/title.
+   */
+  useEffect(() => {
+    window.taskmaster?.setBrowserMonitoringActive(timer.isSessionActive)
+  }, [timer.isSessionActive])
 
   /* Opens the mini timer window and reports IPC setup issues during development. */
   async function openMiniTimer() {
@@ -171,7 +190,11 @@ export default function DeepSeshPage() {
               {!timer.isSessionActive && <FocusEnvironmentSummary />}
             </div>
 
-            {timer.isSessionActive && <FocusMonitorPanel />}
+            {timer.isSessionActive && (
+              <FocusMonitorPanel
+                browserActivity={timer.isSessionActive ? browserActivity : null}
+              />
+            )}
           </section>
         </main>
       </div>

@@ -13,6 +13,17 @@ contextBridge.exposeInMainWorld('taskmaster', {
     ipcRenderer.send('taskmaster:mini-timer-state', state),
   sendMiniTimerCommand: (command) =>
     ipcRenderer.send('taskmaster:mini-timer-command', command),
+  setBrowserMonitoringActive: (isActive) =>
+    ipcRenderer.send('taskmaster:browser-monitoring-active', isActive),
+  onBrowserActivity: (callback) => {
+    const listener = (_event, activity) => callback(activity)
+
+    ipcRenderer.on('taskmaster:browser-activity', listener)
+
+    return () => {
+      ipcRenderer.removeListener('taskmaster:browser-activity', listener)
+    }
+  },
   onMiniTimerState: (callback) => {
     const listener = (_event, state) => callback(state)
 
