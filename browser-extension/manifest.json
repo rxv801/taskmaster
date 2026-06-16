@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Taskmaster Browser Monitor",
+  "description": "Active tab metadata bridge for local Taskmaster focus sessions.",
+  "version": "0.1.0",
+  "permissions": ["tabs", "nativeMessaging"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
