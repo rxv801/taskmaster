@@ -40,6 +40,10 @@ from cv import gaze_detector
 # The FastAPI application. uvicorn looks for this (`uvicorn main:app`).
 app = FastAPI()
 
+# Max accepted encoded frame size (bytes). The renderer sends JPEGs at ~640px,
+# so anything dramatically larger is treated as suspicious/misconfigured input.
+MAX_FRAME_BYTES = 5 * 1024 * 1024
+
 
 # ---------------------------------------------------------------------------
 # Plain HTTP health check — "is the server up?"
@@ -91,13 +95,20 @@ async def detection_socket(websocket: WebSocket) -> None:
             # until a binary message arrives — so we only work when there's a
             # frame to process.
             frame_bytes = await websocket.receive_bytes()
+            if len(frame_bytes) > MAX_FRAME_BYTES:
+                await websocket.close(code=1009, reason="Frame too large")
+                break
 
             # Decode the bytes into an image. May be None if decoding failed.
             frame = decode_frame(frame_bytes)
 
             # Run both detectors on this one frame.
-            phone_event = phone_detector.detect_phone(frame)
-            gaze_event = gaze_detector.detect_gaze(frame)
+            try:
+                phone_event = phone_detector.detect_phone(frame)
+                gaze_event = gaze_detector.detect_gaze(frame)
+            except Exception as error:
+                print(f"[cv-worker] detector error: {error}")
+                continue
 
             # Send the two results back to the client as JSON text messages.
             await websocket.send_text(json.dumps(phone_event))
