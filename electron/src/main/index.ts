@@ -5,6 +5,10 @@
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import {
+  startBrowserActivityBridge,
+  stopBrowserActivityBridge,
+} from './browser-activity-bridge.ts'
 import { registerIpcHandlers } from './ipc-handlers.ts'
 import { stopPythonWorker } from './python-bridge.ts'
 
@@ -164,6 +168,13 @@ function registerMiniTimerIpcHandlers() {
 
 
 app.whenReady().then(() => {
+  startBrowserActivityBridge((payload) => {
+    BrowserWindow.getAllWindows().forEach((window) => {
+      if (!window.isDestroyed()) {
+        window.webContents.send('taskmaster:browser-activity', payload)
+      }
+    })
+  })
   registerIpcHandlers()
   registerMiniTimerIpcHandlers()
   // The CV worker is started on demand (see python-bridge.ts) when the renderer
@@ -176,4 +187,5 @@ app.whenReady().then(() => {
 // never released it, so no Python process outlives the app.
 app.on('before-quit', () => {
   stopPythonWorker()
+  stopBrowserActivityBridge()
 })
