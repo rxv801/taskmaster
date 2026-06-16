@@ -67,6 +67,18 @@ export function useCvDetection(enabled: boolean): CvStatus {
     // and started on demand). connectWithRetry below waits out its boot.
     window.taskmaster?.cv?.request();
 
+    // Release the worker exactly once, whether startup fails or we unmount.
+    // Without the guard, releasing in the catch path AND on unmount would
+    // decrement the reference count twice for a single request.
+    let workerReleased = false;
+    const releaseWorker = () => {
+      if (workerReleased) {
+        return;
+      }
+      workerReleased = true;
+      window.taskmaster?.cv?.release();
+    };
+
     // `cancelled` guards against async work finishing after we've torn down.
     let cancelled = false;
     let socket: WebSocket | null = null;
@@ -145,6 +157,10 @@ export function useCvDetection(enabled: boolean): CvStatus {
 
     start().catch((error) => {
       console.error("[cv] could not start detection:", error);
+      // Startup failed (camera denied/missing/busy, bad device id, etc.), so no
+      // frames will be sent. Release the worker now instead of holding it until
+      // unmount.
+      releaseWorker();
     });
 
     // Cleanup on unmount / when `enabled` flips off: stop everything so the
@@ -157,8 +173,9 @@ export function useCvDetection(enabled: boolean): CvStatus {
       socket?.close();
       stream?.getTracks().forEach((track) => track.stop());
       // Let the main process know we no longer need the worker; it stops once
-      // the last consumer releases (after a short grace period).
-      window.taskmaster?.cv?.release();
+      // the last consumer releases (after a short grace period). No-op if the
+      // catch path above already released it.
+      releaseWorker();
     };
   }, [enabled]);
 

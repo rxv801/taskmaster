@@ -101,7 +101,9 @@ try {
 
 # ---------------------------------------------------------------------------
 Write-Host ''
-Write-Host 'Done. To run the CV worker:'
-Write-Host '    cd python; .venv\Scripts\Activate.ps1; python cv\detection_loop.py'
-Write-Host 'To run the Electron app:'
+Write-Host 'Done. To run the app:'
 Write-Host '    cd electron; npm run dev'
+Write-Host 'Electron starts the Python CV worker automatically when detection is needed.'
+Write-Host ''
+Write-Host 'To run the CV worker by itself (e.g. for testing):'
+Write-Host '    cd python; .\.venv\Scripts\Activate.ps1; python -m uvicorn main:app --port 8765'
