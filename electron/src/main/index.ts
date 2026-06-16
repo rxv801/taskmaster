@@ -10,6 +10,7 @@ import {
   stopBrowserActivityBridge,
 } from './browser-activity-bridge.ts'
 import { registerIpcHandlers } from './ipc-handlers.ts'
+import { stopPythonWorker } from './python-bridge.ts'
 
 
 
@@ -176,10 +177,15 @@ app.whenReady().then(() => {
   })
   registerIpcHandlers()
   registerMiniTimerIpcHandlers()
+  // The CV worker is started on demand (see python-bridge.ts) when the renderer
+  // requests detection, not here — nothing runs while no session is active.
   createWindow()
   createTray()
 })
 
+// Safety net: force the worker down when the app quits, even if a consumer
+// never released it, so no Python process outlives the app.
 app.on('before-quit', () => {
+  stopPythonWorker()
   stopBrowserActivityBridge()
 })
