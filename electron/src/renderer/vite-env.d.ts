@@ -15,6 +15,10 @@ declare global {
   interface Window {
     taskmaster: {
       detectCommonApps: () => Promise<DetectedCommonApp[]>
+      cv: {
+        request: () => void
+        release: () => void
+      }
       openMiniTimer: () => Promise<void>
       sendMiniTimerState: (state: MiniTimerState) => void
       sendMiniTimerCommand: (command: MiniTimerCommand) => void

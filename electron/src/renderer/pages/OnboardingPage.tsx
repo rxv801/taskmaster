@@ -7,6 +7,8 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import CameraSetupStep from '../components/onboarding/OnboardingCameraSetup'
+import FaceCheckStep from '../components/onboarding/OnboardingFaceCheck'
+import PhoneCheckStep from '../components/onboarding/OnboardingPhoneCheck'
 import DistractionOptionsStep from '../components/onboarding/OnboardingAdditionalFunctions'
 import FocusEnvironmentStep from '../components/onboarding/WhitelistSelectionStep'
 import MenuPage from './MenuPage'
@@ -16,12 +18,14 @@ import BrowserActivitySelectionStep from '../components/onboarding/BrowserActivi
 type Direction = 'forward' | 'backward'
 
 const lightStateByStep = [
-  'hero',
-  'top-right',
-  'top-left',
-  'ambient',
-  'ambient',
-  'off',
+  'hero',       // 0 welcome
+  'top-right',  // 1 camera setup
+  'top-left',   // 2 face check
+  'top-left',   // 3 phone check
+  'ambient',    // 4 focus environment
+  'ambient',    // 5 browser activity
+  'ambient',    // 6 distraction options
+  'off',        // 7 menu
 ] as const
 
 export default function OnboardingPage() {
@@ -74,7 +78,7 @@ export default function OnboardingPage() {
 
     if (stepToRender === 2) {
       return (
-        <FocusEnvironmentStep
+        <FaceCheckStep
           onBack={() => goToStep(1)}
           onContinue={() => goToStep(3)}
         />
@@ -83,7 +87,7 @@ export default function OnboardingPage() {
 
     if (stepToRender === 3) {
       return (
-        <BrowserActivitySelectionStep
+        <PhoneCheckStep
           onBack={() => goToStep(2)}
           onContinue={() => goToStep(4)}
         />
@@ -92,9 +96,27 @@ export default function OnboardingPage() {
 
     if (stepToRender === 4) {
       return (
-        <DistractionOptionsStep
+        <FocusEnvironmentStep
           onBack={() => goToStep(3)}
-          onFinish={() => goToStep(5)}
+          onContinue={() => goToStep(5)}
+        />
+      )
+    }
+
+    if (stepToRender === 5) {
+      return (
+        <BrowserActivitySelectionStep
+          onBack={() => goToStep(4)}
+          onContinue={() => goToStep(6)}
+        />
+      )
+    }
+
+    if (stepToRender === 6) {
+      return (
+        <DistractionOptionsStep
+          onBack={() => goToStep(5)}
+          onFinish={() => goToStep(7)}
         />
       )
     }

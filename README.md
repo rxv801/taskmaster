@@ -65,7 +65,8 @@ taskmaster/
 │       ├── detection_loop.py  # camera -> detectors -> events loop
 │       ├── phone_detector.py  # phone-in-frame detection
 │       └── gaze_detector.py   # gaze/face detection (planned)
-├── setup.sh                   # one-shot install for Python + Electron
+├── setup.sh                   # one-shot install for Python + Electron (macOS/Linux)
+├── setup.ps1                  # same, for Windows PowerShell
 ├── PLAN.md
 └── README.md
 ```
@@ -81,11 +82,16 @@ taskmaster/
 One command installs both the Python CV worker and the Electron app:
 
 ```bash
+# macOS / Linux
 ./setup.sh
+
+# Windows (PowerShell)
+./setup.ps1
 ```
 
 It creates the Python venv at `python/.venv` (Python 3.11), installs
-`requirements.txt`, and runs `npm install` in `electron/`.
+`requirements.txt`, and runs `npm install` in `electron/`. The Electron app
+expects the worker at that venv path, so run setup before `npm run dev`.
 
 <details>
 <summary>Manual setup (if you prefer)</summary>

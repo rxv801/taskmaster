@@ -15,7 +15,7 @@ export default function DistractionOptionsStep({
 }: DistractionOptionsStepProps) {
   return (
     <section className="onboarding-screen distraction-options-screen">
-      <p className="status-pill onboarding-step-pill">Step 4</p>
+      <p className="status-pill onboarding-step-pill">Step 7</p>
       <div className="distraction-options-layout">
         <header className="distraction-options-header">
           <div className="onboarding-header">

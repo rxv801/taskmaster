@@ -81,7 +81,9 @@ echo "    installing npm dependencies in electron/"
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "Done. To run the CV worker:"
-echo "    cd python && source .venv/bin/activate && python cv/detection_loop.py"
-echo "To run the Electron app:"
+echo "Done. To run the app:"
 echo "    cd electron && npm run dev"
+echo "Electron starts the Python CV worker automatically when detection is needed."
+echo ""
+echo "To run the CV worker by itself (e.g. for testing):"
+echo "    cd python && source .venv/bin/activate && python -m uvicorn main:app --port 8765"

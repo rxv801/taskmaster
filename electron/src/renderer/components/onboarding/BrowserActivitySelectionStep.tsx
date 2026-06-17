@@ -123,7 +123,7 @@ export default function BrowserActivitySelectionStep({
     }
     return (
         <section className="onboarding-screen focus-environment-screen">
-        <p className="status-pill onboarding-step-pill">Step 4</p>
+        <p className="status-pill onboarding-step-pill">Step 6</p>
 
         <div className="focus-environment-layout">
             <header className="focus-environment-header">
