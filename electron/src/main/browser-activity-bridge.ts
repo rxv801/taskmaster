@@ -1,5 +1,6 @@
-// Dev-only localhost bridge for the Taskmaster browser extension prototype.
-// This accepts active tab metadata only while a focus session has enabled monitoring.
+// Local Taskmaster app bridge for browser activity messages.
+// Native Messaging host forwards validated active-tab metadata here while a
+// focus session has enabled monitoring.
 
 import http from 'node:http'
 import type { BrowserActivityPayload } from '../shared/browserActivity.ts'
@@ -16,7 +17,7 @@ let isBrowserMonitoringActive = false
 let latestBrowserActivity: BrowserActivityPayload | null = null
 let notifyRenderer: BrowserActivityListener | null = null
 
-/* Starts the dev HTTP bridge once the Electron app is ready. */
+/* Starts the local HTTP bridge once the Electron app is ready. */
 export function startBrowserActivityBridge(onActivity: BrowserActivityListener) {
   notifyRenderer = onActivity
 
@@ -57,7 +58,7 @@ export function startBrowserActivityBridge(onActivity: BrowserActivityListener) 
   })
 }
 
-/* Closes the local bridge during app shutdown. */
+/* Closes the local app bridge during app shutdown. */
 export function stopBrowserActivityBridge() {
   setBrowserMonitoringActive(false)
 
@@ -186,7 +187,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-/* Allows the unpacked dev extension to call the local bridge during development. */
+/* Allows local development and the native host to call the app bridge. */
 function addCorsHeaders(response: http.ServerResponse) {
   response.setHeader('Access-Control-Allow-Origin', '*')
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')

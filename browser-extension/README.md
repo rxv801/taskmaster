@@ -31,7 +31,7 @@ Start a Deep Sesh or Pomodoro session before testing browser activity.
 3. Click Load unpacked.
 4. Select the project `browser-extension` folder.
 5. Start a Taskmaster focus session, then switch tabs.
-6. Native Messaging requires a host install step that will be added in the next phase.
+6. Install the native host using the steps below.
 
 ## Load In Opera GX
 
@@ -50,9 +50,24 @@ Start a Deep Sesh or Pomodoro session before testing browser activity.
 5. Stop the Taskmaster session.
 6. Switch browser tabs again and confirm the panel no longer receives new activity.
 
+## Install Native Messaging Host
+
+From the project root:
+
+```powershell
+.\native-host\install-chrome-native-host.ps1
+```
+
+This registers the host under the current Windows user:
+
+```txt
+HKCU\Software\Google\Chrome\NativeMessagingHosts\com.taskmaster.browser_monitor
+```
+
+Restart Chrome after installing the host.
+
 ## Current Limitations
 
-- Native Messaging host setup is not implemented yet.
 - It only reports the active tab in the focused browser window.
 - It does not classify, block, notify, or persist browsing activity.
 - Internal browser pages such as `chrome://`, `edge://`, `opera://`, `about:`, and `devtools://` are ignored.
@@ -76,6 +91,12 @@ The package includes only:
 - `manifest.json`
 - `background.js`
 
-## Future Production Plan
+## Native Messaging
 
-The next phase will add the Native Messaging host and install scripts.
+The extension uses:
+
+```txt
+com.taskmaster.browser_monitor
+```
+
+The native host forwards validated messages to the local Taskmaster desktop app on the same device.
