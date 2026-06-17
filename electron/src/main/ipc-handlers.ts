@@ -4,6 +4,12 @@ import { ipcMain } from 'electron'
 import { detectCommonWindowsApps } from './appDetection/detectCommonWindowsApps.ts'
 import { requestPythonWorker, releasePythonWorker } from './python-bridge.ts'
 import {
+  getLatestDesktopActivity,
+  pauseDesktopActivityMonitoring,
+  startDesktopActivityMonitoring,
+  stopDesktopActivityMonitoring,
+} from './activity-monitor.ts'
+import {
   getLatestBrowserActivity,
   setBrowserMonitoringActive,
 } from './browser-activity-bridge.ts'
@@ -11,6 +17,9 @@ import {
 export function registerIpcHandlers() {
   ipcMain.removeHandler('taskmaster:detect-common-apps')
   ipcMain.removeAllListeners('taskmaster:browser-monitoring-active')
+  ipcMain.removeAllListeners('taskmaster:desktop-monitoring-start')
+  ipcMain.removeAllListeners('taskmaster:desktop-monitoring-pause')
+  ipcMain.removeAllListeners('taskmaster:desktop-monitoring-stop')
 
   ipcMain.handle('taskmaster:detect-common-apps', () => {
     const detectedApps = detectCommonWindowsApps()
@@ -40,5 +49,29 @@ export function registerIpcHandlers() {
         event.sender.send('taskmaster:browser-activity', latestActivity)
       }
     }
+  })
+
+  ipcMain.on('taskmaster:desktop-monitoring-start', (event) => {
+    const sender = event.sender
+
+    startDesktopActivityMonitoring((activity) => {
+      if (!sender.isDestroyed()) {
+        sender.send('taskmaster:desktop-activity', activity)
+      }
+    })
+
+    const latestActivity = getLatestDesktopActivity()
+
+    if (latestActivity) {
+      sender.send('taskmaster:desktop-activity', latestActivity)
+    }
+  })
+
+  ipcMain.on('taskmaster:desktop-monitoring-pause', () => {
+    pauseDesktopActivityMonitoring()
+  })
+
+  ipcMain.on('taskmaster:desktop-monitoring-stop', () => {
+    stopDesktopActivityMonitoring()
   })
 }

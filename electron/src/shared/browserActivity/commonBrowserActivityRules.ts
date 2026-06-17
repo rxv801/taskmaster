@@ -22,6 +22,7 @@ export type BrowserActivityCategory =
   | 'ai'
   | 'social'
   | 'shopping'
+  | 'custom'
 
 export type BrowserActivityRule = {
   id: string

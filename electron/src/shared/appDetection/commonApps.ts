@@ -53,6 +53,16 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     defaultStatus: 'allowed',
   },
   {
+    id: 'electron',
+    displayName: 'Electron',
+    category: 'productivity',
+    executableNames: ['electron.exe', 'Taskmaster.exe'],
+    commonWindowsPaths: [
+      '%LOCALAPPDATA%\\Programs\\Taskmaster\\Taskmaster.exe',
+    ],
+    defaultStatus: 'allowed',
+  },
+  {
     id: 'chrome',
     displayName: 'Google Chrome',
     category: 'browser',

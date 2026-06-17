@@ -23,6 +23,21 @@ contextBridge.exposeInMainWorld('taskmaster', {
     ipcRenderer.send('taskmaster:mini-timer-command', command),
   setBrowserMonitoringActive: (isActive) =>
     ipcRenderer.send('taskmaster:browser-monitoring-active', isActive),
+  startDesktopMonitoring: () =>
+    ipcRenderer.send('taskmaster:desktop-monitoring-start'),
+  pauseDesktopMonitoring: () =>
+    ipcRenderer.send('taskmaster:desktop-monitoring-pause'),
+  stopDesktopMonitoring: () =>
+    ipcRenderer.send('taskmaster:desktop-monitoring-stop'),
+  onDesktopActivity: (callback) => {
+    const listener = (_event, activity) => callback(activity)
+
+    ipcRenderer.on('taskmaster:desktop-activity', listener)
+
+    return () => {
+      ipcRenderer.removeListener('taskmaster:desktop-activity', listener)
+    }
+  },
   onBrowserActivity: (callback) => {
     const listener = (_event, activity) => callback(activity)
 
