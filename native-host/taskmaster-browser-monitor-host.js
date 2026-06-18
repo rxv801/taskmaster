@@ -3,13 +3,17 @@
 // Reads Chrome length-prefixed JSON from stdin, validates messages, and forwards
 // active-tab metadata to the local Taskmaster desktop app bridge.
 
+const fs = require('node:fs')
 const http = require('node:http')
+const os = require('node:os')
+const path = require('node:path')
 
 const BRIDGE_HOST = '127.0.0.1'
 const BRIDGE_PORT = 17382
 const STATUS_PATH = '/taskmaster-browser-monitor/status'
 const ACTIVITY_PATH = '/taskmaster-browser-monitor/activity'
 const MAX_MESSAGE_BYTES = 1024 * 1024
+const BRIDGE_TOKEN_HEADER = 'X-Taskmaster-Bridge-Token'
 
 let inputBuffer = Buffer.alloc(0)
 
@@ -122,6 +126,11 @@ async function handleActivityMessage(payload) {
 
 function requestTaskmaster({ method, path, body }) {
   const requestBody = body ? JSON.stringify(body) : ''
+  const bridgeToken = readBridgeToken()
+
+  if (!bridgeToken) {
+    return Promise.reject(new Error('Taskmaster bridge token unavailable'))
+  }
 
   return new Promise((resolve, reject) => {
     const request = http.request(
@@ -133,6 +142,7 @@ function requestTaskmaster({ method, path, body }) {
         headers: {
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(requestBody),
+          [BRIDGE_TOKEN_HEADER]: bridgeToken,
         },
       },
       (response) => {
@@ -160,6 +170,48 @@ function requestTaskmaster({ method, path, body }) {
     request.write(requestBody)
     request.end()
   })
+}
+
+// Reads the per-app-run bridge token created by Taskmaster before forwarding.
+function readBridgeToken() {
+  try {
+    const tokenFile = fs.readFileSync(getBridgeTokenPath(), 'utf8')
+    const tokenPayload = JSON.parse(tokenFile)
+
+    if (typeof tokenPayload.token === 'string') {
+      return tokenPayload.token
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function getBridgeTokenPath() {
+  if (process.env.TASKMASTER_BROWSER_BRIDGE_TOKEN_PATH) {
+    return process.env.TASKMASTER_BROWSER_BRIDGE_TOKEN_PATH
+  }
+
+  if (process.platform === 'win32') {
+    return path.join(
+      process.env.APPDATA || os.homedir(),
+      'Taskmaster',
+      'browser-bridge-token.json'
+    )
+  }
+
+  if (process.platform === 'darwin') {
+    return path.join(
+      os.homedir(),
+      'Library',
+      'Application Support',
+      'Taskmaster',
+      'browser-bridge-token.json'
+    )
+  }
+
+  return path.join(os.homedir(), '.config', 'Taskmaster', 'browser-bridge-token.json')
 }
 
 function parseBrowserActivityPayload(value) {
