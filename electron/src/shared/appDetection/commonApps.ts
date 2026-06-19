@@ -16,6 +16,9 @@ export type CommonAppDefinition = {
   category: CommonAppCategory
   executableNames: string[]
   commonWindowsPaths: string[]
+  // macOS install locations (.app bundles). `%VAR%` is not used here; a leading
+  // `~` expands to the user's home. Empty when the app has no macOS build.
+  commonMacPaths: string[]
   defaultStatus: 'allowed' | 'blocked'
 }
 
@@ -30,6 +33,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
       '%PROGRAMFILES%\\Microsoft VS Code\\Code.exe',
       '%PROGRAMFILES(X86)%\\Microsoft VS Code\\Code.exe',
     ],
+    commonMacPaths: [
+      '/Applications/Visual Studio Code.app',
+      '~/Applications/Visual Studio Code.app',
+    ],
     defaultStatus: 'allowed',
   },
   {
@@ -40,6 +47,8 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     commonWindowsPaths: [
       '%LOCALAPPDATA%\\Microsoft\\WindowsApps\\wt.exe',
     ],
+    // No macOS build of Windows Terminal; Terminal.app is a separate product.
+    commonMacPaths: [],
     defaultStatus: 'allowed',
   },
   {
@@ -49,6 +58,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     executableNames: ['Notion.exe'],
     commonWindowsPaths: [
       '%LOCALAPPDATA%\\Programs\\Notion\\Notion.exe',
+    ],
+    commonMacPaths: [
+      '/Applications/Notion.app',
+      '~/Applications/Notion.app',
     ],
     defaultStatus: 'allowed',
   },
@@ -62,6 +75,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
       '%PROGRAMFILES(X86)%\\Google\\Chrome\\Application\\chrome.exe',
       '%LOCALAPPDATA%\\Google\\Chrome\\Application\\chrome.exe',
     ],
+    commonMacPaths: [
+      '/Applications/Google Chrome.app',
+      '~/Applications/Google Chrome.app',
+    ],
     defaultStatus: 'allowed',
   },
   {
@@ -72,6 +89,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     commonWindowsPaths: [
       '%PROGRAMFILES(X86)%\\Microsoft\\Edge\\Application\\msedge.exe',
       '%PROGRAMFILES%\\Microsoft\\Edge\\Application\\msedge.exe',
+    ],
+    commonMacPaths: [
+      '/Applications/Microsoft Edge.app',
+      '~/Applications/Microsoft Edge.app',
     ],
     defaultStatus: 'allowed',
   },
@@ -84,6 +105,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
       '%LOCALAPPDATA%\\Programs\\Opera GX\\launcher.exe',
       '%LOCALAPPDATA%\\Programs\\Opera GX\\opera.exe',
     ],
+    commonMacPaths: [
+      '/Applications/Opera GX.app',
+      '~/Applications/Opera GX.app',
+    ],
     defaultStatus: 'allowed',
   },
   {
@@ -94,6 +119,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     commonWindowsPaths: [
       '%LOCALAPPDATA%\\Discord\\Update.exe',
       '%LOCALAPPDATA%\\Discord\\app-*\\Discord.exe',
+    ],
+    commonMacPaths: [
+      '/Applications/Discord.app',
+      '~/Applications/Discord.app',
     ],
     defaultStatus: 'blocked',
   },
@@ -106,6 +135,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
       '%APPDATA%\\Spotify\\Spotify.exe',
       '%LOCALAPPDATA%\\Microsoft\\WindowsApps\\Spotify.exe',
     ],
+    commonMacPaths: [
+      '/Applications/Spotify.app',
+      '~/Applications/Spotify.app',
+    ],
     defaultStatus: 'blocked',
   },
   {
@@ -116,6 +149,10 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     commonWindowsPaths: [
       '%PROGRAMFILES(X86)%\\Steam\\steam.exe',
       '%PROGRAMFILES%\\Steam\\steam.exe',
+    ],
+    commonMacPaths: [
+      '/Applications/Steam.app',
+      '~/Applications/Steam.app',
     ],
     defaultStatus: 'blocked',
   },

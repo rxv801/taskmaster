@@ -1,9 +1,12 @@
-// This file needs to be on main as we are using node APIs to detect if common apps are installed on the user's system. We will likely need to expand this in the future to support more apps and other platforms, but for now we are just focusing on a few common Windows apps.
+// Detects which common apps are installed, using node fs APIs. Supports Windows
+// (checks `.exe` paths) and macOS (checks `.app` bundle paths). Other platforms
+// return nothing for now.
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { COMMON_APPS } from "../../shared/appDetection/commonApps.ts"
 
-export type DetectedWindowsApp = {
+export type DetectedApp = {
   id: string
   displayName: string
   category: 'productivity' | 'distraction' | 'browser'
@@ -11,10 +14,18 @@ export type DetectedWindowsApp = {
   defaultStatus: 'allowed' | 'blocked'
 }
 
-function expandWindowsEnvironmentPath(rawPath: string) {
-  return rawPath.replace(/%([^%]+)%/g, (_, variableName: string) => {
+// Expands a catalogue path for the current OS: Windows `%VAR%` environment
+// variables, and a leading `~` to the user's home directory (macOS/Linux).
+function expandPath(rawPath: string) {
+  const withEnvVars = rawPath.replace(/%([^%]+)%/g, (_, variableName: string) => {
     return process.env[variableName] ?? ''
   })
+
+  if (withEnvVars === '~' || withEnvVars.startsWith('~/')) {
+    return path.join(os.homedir(), withEnvVars.slice(1))
+  }
+
+  return withEnvVars
 }
 
 function pathHasWildcard(filePath: string) {
@@ -70,9 +81,9 @@ function findWildcardPath(filePath: string) {
   }
 }
 
-function findExistingAppPath(commonWindowsPaths: string[]) {
-  for (const rawPath of commonWindowsPaths) {
-    const expandedPath = expandWindowsEnvironmentPath(rawPath)
+function findExistingAppPath(candidatePaths: string[]) {
+  for (const rawPath of candidatePaths) {
+    const expandedPath = expandPath(rawPath)
 
     console.log('[Taskmaster] Checking path:', {
       rawPath,
@@ -123,13 +134,19 @@ function findExistingAppPath(commonWindowsPaths: string[]) {
   return null
 }
 
-export function detectCommonWindowsApps(): DetectedWindowsApp[] {
-  if (process.platform !== 'win32') {
+export function detectCommonApps(): DetectedApp[] {
+  // Only Windows and macOS have catalogue paths to check; anything else (Linux)
+  // has no entries yet, so report nothing rather than guessing.
+  const isWindows = process.platform === 'win32'
+  const isMac = process.platform === 'darwin'
+
+  if (!isWindows && !isMac) {
     return []
   }
 
   return COMMON_APPS.flatMap((app) => {
-    const executablePath = findExistingAppPath(app.commonWindowsPaths)
+    const candidatePaths = isMac ? app.commonMacPaths : app.commonWindowsPaths
+    const executablePath = findExistingAppPath(candidatePaths)
 
     if (!executablePath) {
       return []
