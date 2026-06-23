@@ -7,8 +7,8 @@
 // - Page content, cookies, form inputs, and the browsing history API are never read.
 // - The active tab URL/title is queried only after Taskmaster says monitoring is active.
 //
-// Transport is intentionally separated from tab collection so the same privacy
-// gate can work with the current dev localhost bridge and future Native Messaging.
+// Transport is intentionally separated from tab collection. Production uses
+// Native Messaging; the old localhost path is retained only for local debugging.
 
 const BRIDGE_ORIGIN = 'http://127.0.0.1:17382'
 const STATUS_URL = `${BRIDGE_ORIGIN}/taskmaster-browser-monitor/status`
@@ -91,7 +91,8 @@ async function isMonitoringEnabled() {
   return isDevLocalhostMonitoringEnabled()
 }
 
-// Placeholder production status check. Phase 2 will wire this to the native host.
+// Production status check. Chrome launches the registered Native Messaging host,
+// then the host asks the local Taskmaster bridge whether monitoring is active.
 async function isNativeMonitoringEnabled() {
   try {
     const response = await chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, {
@@ -156,7 +157,7 @@ async function sendActivity(payload) {
   await sendDevLocalhostActivity(payload)
 }
 
-// Placeholder production sender. Phase 2 will add the native host implementation.
+// Production sender. The native host validates and forwards this to Taskmaster.
 async function sendNativeActivity(payload) {
   try {
     await chrome.runtime.sendNativeMessage(NATIVE_HOST_NAME, {

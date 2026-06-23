@@ -1,0 +1,9 @@
+{
+  "name": "com.taskmaster.browser_monitor",
+  "description": "Taskmaster Browser Monitor Native Host",
+  "path": "ABSOLUTE_PATH_CREATED_BY_install-chrome-native-host.ps1",
+  "type": "stdio",
+  "allowed_origins": [
+    "chrome-extension://kibldolnfbpajohdnkbjfjefnemllapm/"
+  ]
+}

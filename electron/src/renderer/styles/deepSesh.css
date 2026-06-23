@@ -62,11 +62,13 @@
 }
 
 .deep-sesh-shell {
+  position: relative;
   display: grid;
   width: min(100%, 76rem);
   height: 100%;
   margin: 0 auto;
   padding: clamp(var(--space-md), 3vh, var(--space-xl));
+  overflow: hidden;
 }
 
 .deep-sesh-main {
@@ -74,7 +76,16 @@
   width: min(100%, 44rem);
   min-height: 0;
   place-self: center;
-  transition: width 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition:
+    opacity 360ms ease,
+    transform 460ms cubic-bezier(0.2, 0.9, 0.2, 1),
+    width 420ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+.deep-sesh-shell--reviewing .deep-sesh-main--timer {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-4rem) scale(0.96);
 }
 
 .deep-sesh-screen--active .deep-sesh-main {
@@ -427,6 +438,11 @@
   animation: deep-sesh-monitor-enter 420ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
 }
 
+.deep-sesh-monitor-panel--warning {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 72%, var(--color-border));
+  box-shadow: 0 1rem 2rem color-mix(in srgb, var(--color-accent-bright) 8%, transparent);
+}
+
 .deep-sesh-monitor-status {
   display: grid;
   gap: 0.45rem;
@@ -494,6 +510,135 @@
   font-size: clamp(0.8rem, 0.76vw, 0.9rem);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.deep-sesh-monitor-rule--allowed {
+  border-color: color-mix(in srgb, #4ade80 42%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--blocked {
+  border-color: color-mix(in srgb, var(--color-accent-bright) 68%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--ignored {
+  border-color: color-mix(in srgb, var(--color-accent) 36%, var(--color-border));
+}
+
+.deep-sesh-monitor-rule--unknown {
+  border-color: color-mix(in srgb, var(--color-text-muted) 38%, var(--color-border));
+}
+
+.deep-sesh-review-screen {
+  position: absolute;
+  inset: clamp(var(--space-md), 3vh, var(--space-xl));
+  z-index: 4;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  opacity: 0;
+  transform: translateX(4rem) scale(0.98);
+  animation: deep-sesh-review-enter 460ms cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+}
+
+.deep-sesh-review-later-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.deep-sesh-review-panel {
+  display: grid;
+  width: min(100%, 56rem);
+  max-height: min(42rem, calc(100vh - 7rem));
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  overflow: hidden;
+  text-align: left;
+}
+
+.deep-sesh-review-header {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.deep-sesh-review-header h2 {
+  margin: 0;
+  font-size: clamp(1.2rem, 1.4vw, 1.55rem);
+}
+
+.deep-sesh-review-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.deep-sesh-review-stats div,
+.deep-sesh-review-item {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 66%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-bg-card) 54%, transparent);
+}
+
+.deep-sesh-review-stats span,
+.deep-sesh-review-item span {
+  color: var(--color-text-muted);
+  font-size: clamp(0.7rem, 0.66vw, 0.78rem);
+  font-weight: 800;
+}
+
+.deep-sesh-review-stats strong,
+.deep-sesh-review-item strong {
+  color: var(--color-text-main);
+}
+
+.deep-sesh-review-list {
+  display: grid;
+  gap: var(--space-sm);
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.deep-sesh-review-item {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.deep-sesh-review-item p {
+  margin: 0;
+}
+
+.deep-sesh-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.deep-sesh-review-actions .secondary-button {
+  min-height: 2.15rem;
+  padding: 0.42rem 0.7rem;
+}
+
+.deep-sesh-review-choice--active {
+  border-color: var(--color-border-accent);
+  color: #161207;
+  background: var(--color-accent);
+}
+
+.deep-sesh-review-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid color-mix(in srgb, var(--color-border) 72%, transparent);
+}
+
+.deep-sesh-review-footer .primary-button {
+  min-width: 8rem;
 }
 
 .deep-sesh-setting-grid {
@@ -601,6 +746,13 @@
   }
 }
 
+@keyframes deep-sesh-review-enter {
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
 @media (max-height: 760px) {
   .deep-sesh-corner-title h1 {
     font-size: clamp(1.15rem, 2vw, 1.8rem);
@@ -684,8 +836,27 @@
   }
 
   .deep-sesh-setting-grid,
+  .deep-sesh-review-stats,
   .deep-sesh-summary-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deep-sesh-review-screen {
+    inset: 4.8rem var(--space-md) 4.8rem;
+    align-content: stretch;
+  }
+
+  .deep-sesh-review-panel {
+    align-self: center;
+    max-height: 100%;
+    padding: var(--space-md);
+  }
+
+  .deep-sesh-review-item,
+  .deep-sesh-review-footer {
+    grid-template-columns: minmax(0, 1fr);
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .deep-sesh-summary-grid {

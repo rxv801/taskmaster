@@ -1,14 +1,22 @@
 // Main Deep Sesh screen shown after onboarding.
 // This page composes the Deep Sesh UI and keeps timer display text together.
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DeepSeshModeSelector from '../components/deepSesh/DeepSeshModeSelector'
 import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
+import {
+  useFocusMonitoringSession,
+} from '../hooks/useFocusMonitoringSession'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
 import type { BrowserActivityPayload } from '../../shared/browserActivity'
+import type { DesktopActivityPayload } from '../../shared/focusMonitoring'
+import type {
+  AppRuleStatus,
+  BrowserActivityRuleStatus,
+} from '../hooks/useFocusEnvironmentSettings'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
@@ -18,6 +26,17 @@ export default function DeepSeshPage() {
   const stopTimer = timer.stop
   const [browserActivity, setBrowserActivity] =
     useState<BrowserActivityPayload | null>(null)
+  const [desktopActivity, setDesktopActivity] =
+    useState<DesktopActivityPayload | null>(null)
+  const focusMonitor = useFocusMonitoringSession({
+    isSessionActive: timer.isSessionActive,
+    browserActivity,
+    desktopActivity,
+  })
+  const shouldShowReviewScreen =
+    !timer.isSessionActive &&
+    focusMonitor.hasCompletedSessionSummary &&
+    focusMonitor.unknownActivities.length > 0
   const layoutClass = timer.isSessionActive
     ? 'deep-sesh-screen--active'
     : 'deep-sesh-screen--setup'
@@ -103,6 +122,13 @@ export default function DeepSeshPage() {
     })
   }, [])
 
+  /* Receives active desktop app snapshots from Electron main. */
+  useEffect(() => {
+    return window.taskmaster?.onDesktopActivity((activity) => {
+      setDesktopActivity(activity)
+    })
+  }, [])
+
   /**
    * Tells the local browser extension bridge when it may receive tab metadata.
    *
@@ -110,6 +136,10 @@ export default function DeepSeshPage() {
    */
   useEffect(() => {
     window.taskmaster?.setBrowserMonitoringActive(timer.isSessionActive)
+
+    return () => {
+      window.taskmaster?.setBrowserMonitoringActive(false)
+    }
   }, [timer.isSessionActive])
 
   /* Opens the mini timer window and reports IPC setup issues during development. */
@@ -145,8 +175,12 @@ export default function DeepSeshPage() {
         </svg>
       </button>
 
-      <div className="deep-sesh-shell">
-        <main className="deep-sesh-main">
+      <div
+        className={`deep-sesh-shell ${
+          shouldShowReviewScreen ? 'deep-sesh-shell--reviewing' : ''
+        }`}
+      >
+        <main className="deep-sesh-main deep-sesh-main--timer">
           <section className="deep-sesh-panel surface-card">
             <div className="deep-sesh-session-column">
               {/* Mode, timer, setup, and summary are split for reviewable UI changes. */}
@@ -191,12 +225,178 @@ export default function DeepSeshPage() {
             </div>
 
             {timer.isSessionActive && (
-              <FocusMonitorPanel
-                browserActivity={timer.isSessionActive ? browserActivity : null}
-              />
+              <FocusMonitorPanel focusMonitor={focusMonitor} />
             )}
           </section>
+
         </main>
+
+        {shouldShowReviewScreen && (
+          <SessionReviewPanel focusMonitor={focusMonitor} />
+        )}
+      </div>
+    </section>
+  )
+}
+
+function SessionReviewPanel({
+  focusMonitor,
+}: {
+  focusMonitor: ReturnType<typeof useFocusMonitoringSession>
+}) {
+  const [selectedStatuses, setSelectedStatuses] = useState<
+    Record<string, AppRuleStatus | BrowserActivityRuleStatus>
+  >({})
+  const selectedCount = Object.keys(selectedStatuses).length
+  const unresolvedCount = Math.max(
+    0,
+    focusMonitor.unknownActivities.length - selectedCount,
+  )
+  const canContinue = selectedCount > 0
+
+  const sortedUnknownActivities = useMemo(() => {
+    return [...focusMonitor.unknownActivities].sort((leftItem, rightItem) => {
+      return leftItem.kind.localeCompare(rightItem.kind) ||
+        leftItem.label.localeCompare(rightItem.label)
+    })
+  }, [focusMonitor.unknownActivities])
+
+  /* Stores the review choice locally so the user can change their mind before saving. */
+  function selectUnknownStatus(
+    itemId: string,
+    status: AppRuleStatus | BrowserActivityRuleStatus,
+  ) {
+    setSelectedStatuses((currentStatuses) => ({
+      ...currentStatuses,
+      [itemId]: status,
+    }))
+  }
+
+  function doLater() {
+    focusMonitor.dismissSessionSummary({ keepUnknownActivities: true })
+  }
+
+  function continueReview() {
+    if (!canContinue) {
+      return
+    }
+
+    if (
+      unresolvedCount > 0 &&
+      !window.confirm(
+        `${unresolvedCount} unknown item${unresolvedCount === 1 ? '' : 's'} ` +
+          'still need a choice. Taskmaster will ask you again after a later session.',
+      )
+    ) {
+      return
+    }
+
+    focusMonitor.unknownActivities.forEach((item) => {
+      const selectedStatus = selectedStatuses[item.id]
+
+      if (selectedStatus) {
+        focusMonitor.reviewUnknownActivity(item, selectedStatus)
+      }
+    })
+    focusMonitor.dismissSessionSummary({ keepUnknownActivities: true })
+  }
+
+  return (
+    <section className="deep-sesh-review-screen" aria-label="Review unknown activity">
+      <button
+        className="deep-sesh-review-later-button secondary-button"
+        type="button"
+        onClick={doLater}
+      >
+        Do later
+      </button>
+
+      <div className="deep-sesh-review-panel surface-card">
+        <div className="deep-sesh-review-header">
+          <span className="status-pill">Session summary</span>
+          <h2>Review new activity</h2>
+        </div>
+
+        <p className="muted-text">
+          Choose what Taskmaster should do with anything new it saw. Unchosen
+          items stay unknown and will come back after a future session.
+        </p>
+
+        <div className="deep-sesh-review-stats">
+          <div>
+            <span>Distractions</span>
+            <strong>{focusMonitor.stats.distractionEvents}</strong>
+          </div>
+          <div>
+            <span>Distracted time</span>
+            <strong>{formatSecondsLabel(focusMonitor.stats.distractedSeconds)}</strong>
+          </div>
+          <div>
+            <span>Unknown</span>
+            <strong>{focusMonitor.stats.unknownCount}</strong>
+          </div>
+        </div>
+
+        <div className="deep-sesh-review-list">
+          {sortedUnknownActivities.map((item) => {
+            const selectedStatus = selectedStatuses[item.id]
+
+            return (
+              <div className="deep-sesh-review-item" key={item.id}>
+                <div>
+                  <span>{item.kind === 'desktop-app' ? 'Unknown app' : 'Unknown page'}</span>
+                  <strong>{item.label}</strong>
+                  <p className="muted-text">{item.detail}</p>
+                </div>
+                <div className="deep-sesh-review-actions">
+                  <button
+                    className={`secondary-button ${
+                      selectedStatus === 'allowed' ? 'deep-sesh-review-choice--active' : ''
+                    }`}
+                    type="button"
+                    onClick={() => selectUnknownStatus(item.id, 'allowed')}
+                  >
+                    Allow
+                  </button>
+                  <button
+                    className={`secondary-button ${
+                      selectedStatus === 'blocked' ? 'deep-sesh-review-choice--active' : ''
+                    }`}
+                    type="button"
+                    onClick={() => selectUnknownStatus(item.id, 'blocked')}
+                  >
+                    Block
+                  </button>
+                  <button
+                    className={`secondary-button ${
+                      selectedStatus === 'ignored' ? 'deep-sesh-review-choice--active' : ''
+                    }`}
+                    type="button"
+                    onClick={() => selectUnknownStatus(item.id, 'ignored')}
+                  >
+                    Ignore
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        <div className="deep-sesh-review-footer">
+          <span className="muted-text">
+            {selectedCount === 0
+              ? 'Choose at least one item to continue.'
+              : `${selectedCount} selected, ${unresolvedCount} left for later.`}
+          </span>
+          <button
+            className="primary-button"
+            type="button"
+            disabled={!canContinue}
+            onClick={continueReview}
+          >
+            Continue
+          </button>
+        </div>
       </div>
     </section>
   )
@@ -275,4 +475,15 @@ function formatDurationLabel(totalMinutes: number) {
   const minuteText = `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
 
   return `${hourText} ${minuteText}`
+}
+
+function formatSecondsLabel(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+
+  if (minutes === 0) {
+    return `${seconds}s`
+  }
+
+  return `${minutes}m ${seconds}s`
 }

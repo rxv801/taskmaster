@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type { BrowserActivityPayload } from '../shared/browserActivity'
+import type { DesktopActivityPayload } from '../shared/focusMonitoring'
 import type { MiniTimerCommand, MiniTimerState } from './types/miniTimer'
 
 type DetectedCommonApp = {
@@ -23,6 +24,10 @@ declare global {
       sendMiniTimerState: (state: MiniTimerState) => void
       sendMiniTimerCommand: (command: MiniTimerCommand) => void
       setBrowserMonitoringActive: (isActive: boolean) => void
+      startDesktopMonitoring: () => void
+      pauseDesktopMonitoring: () => void
+      stopDesktopMonitoring: () => void
+      onDesktopActivity: (callback: (activity: DesktopActivityPayload) => void) => () => void
       onBrowserActivity: (callback: (activity: BrowserActivityPayload) => void) => () => void
       onMiniTimerState: (callback: (state: MiniTimerState | null) => void) => () => void
       onMiniTimerCommand: (callback: (command: MiniTimerCommand) => void) => () => void

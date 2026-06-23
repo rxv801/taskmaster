@@ -1,13 +1,19 @@
-// Dev-only localhost bridge for the Taskmaster browser extension prototype.
-// This accepts active tab metadata only while a focus session has enabled monitoring.
+// Local Taskmaster app bridge for browser activity messages.
+// Native Messaging host forwards validated active-tab metadata here while a
+// focus session has enabled monitoring.
 
 import http from 'node:http'
+import crypto from 'node:crypto'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import type { BrowserActivityPayload } from '../shared/browserActivity.ts'
 
 const BRIDGE_HOST = '127.0.0.1'
 const BRIDGE_PORT = 17382
 const STATUS_PATH = '/taskmaster-browser-monitor/status'
 const ACTIVITY_PATH = '/taskmaster-browser-monitor/activity'
+const BRIDGE_TOKEN_HEADER = 'x-taskmaster-bridge-token'
 
 type BrowserActivityListener = (payload: BrowserActivityPayload) => void
 
@@ -15,8 +21,9 @@ let server: http.Server | null = null
 let isBrowserMonitoringActive = false
 let latestBrowserActivity: BrowserActivityPayload | null = null
 let notifyRenderer: BrowserActivityListener | null = null
+let bridgeToken: string | null = null
 
-/* Starts the dev HTTP bridge once the Electron app is ready. */
+/* Starts the local HTTP bridge once the Electron app is ready. */
 export function startBrowserActivityBridge(onActivity: BrowserActivityListener) {
   notifyRenderer = onActivity
 
@@ -24,16 +31,15 @@ export function startBrowserActivityBridge(onActivity: BrowserActivityListener) 
     return
   }
 
-  server = http.createServer((request, response) => {
-    addCorsHeaders(response)
+  bridgeToken = createBridgeToken()
 
-    if (request.method === 'OPTIONS') {
-      response.writeHead(204)
-      response.end()
+  server = http.createServer((request, response) => {
+    const requestUrl = new URL(request.url ?? '/', `http://${BRIDGE_HOST}:${BRIDGE_PORT}`)
+
+    if (!isAuthorizedBridgeRequest(request)) {
+      sendJson(response, 401, { error: 'Unauthorized bridge request' })
       return
     }
-
-    const requestUrl = new URL(request.url ?? '/', `http://${BRIDGE_HOST}:${BRIDGE_PORT}`)
 
     if (requestUrl.pathname === STATUS_PATH) {
       handleStatusRequest(request, response)
@@ -57,9 +63,11 @@ export function startBrowserActivityBridge(onActivity: BrowserActivityListener) 
   })
 }
 
-/* Closes the local bridge during app shutdown. */
+/* Closes the local app bridge during app shutdown. */
 export function stopBrowserActivityBridge() {
   setBrowserMonitoringActive(false)
+  removeBridgeToken()
+  bridgeToken = null
 
   if (!server) {
     return
@@ -182,19 +190,70 @@ function parseBrowserActivityPayload(body: unknown): BrowserActivityPayload | nu
   }
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
-
-/* Allows the unpacked dev extension to call the local bridge during development. */
-function addCorsHeaders(response: http.ServerResponse) {
-  response.setHeader('Access-Control-Allow-Origin', '*')
-  response.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-}
-
 /* Writes consistent JSON responses for status, validation, and activity calls. */
 function sendJson(response: http.ServerResponse, statusCode: number, body: object) {
   response.writeHead(statusCode, { 'Content-Type': 'application/json' })
   response.end(JSON.stringify(body))
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+/* Requires the Native Messaging host to prove it knows this app-run secret. */
+function isAuthorizedBridgeRequest(request: http.IncomingMessage) {
+  return Boolean(
+    bridgeToken &&
+      request.headers[BRIDGE_TOKEN_HEADER] === bridgeToken
+  )
+}
+
+/* Writes a fresh bridge token that the native host reads before forwarding. */
+function createBridgeToken() {
+  const token = crypto.randomBytes(32).toString('hex')
+  const tokenPath = getBridgeTokenPath()
+
+  fs.mkdirSync(path.dirname(tokenPath), { recursive: true, mode: 0o700 })
+  fs.writeFileSync(
+    tokenPath,
+    JSON.stringify({ token, createdAt: Date.now() }),
+    { encoding: 'utf8', mode: 0o600 }
+  )
+
+  return token
+}
+
+/* Removes the token when Taskmaster exits so stale hosts cannot reuse it later. */
+function removeBridgeToken() {
+  try {
+    fs.rmSync(getBridgeTokenPath(), { force: true })
+  } catch {
+    // Best-effort cleanup; a stale token still fails after the next app start.
+  }
+}
+
+function getBridgeTokenPath() {
+  if (process.env.TASKMASTER_BROWSER_BRIDGE_TOKEN_PATH) {
+    return process.env.TASKMASTER_BROWSER_BRIDGE_TOKEN_PATH
+  }
+
+  if (process.platform === 'win32') {
+    return path.join(
+      process.env.APPDATA ?? os.homedir(),
+      'Taskmaster',
+      'browser-bridge-token.json'
+    )
+  }
+
+  if (process.platform === 'darwin') {
+    return path.join(
+      os.homedir(),
+      'Library',
+      'Application Support',
+      'Taskmaster',
+      'browser-bridge-token.json'
+    )
+  }
+
+  return path.join(os.homedir(), '.config', 'Taskmaster', 'browser-bridge-token.json')
 }
