@@ -9,7 +9,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { COMMON_APPS } from '../../shared/appDetection/commonApps.ts'
-import { detectCommonApps } from './detectCommonWindowsApps.ts'
+import { detectCommonApps } from './detectCommonApps.ts'
 
 let failures = 0
 function check(label: string, ok: boolean) {

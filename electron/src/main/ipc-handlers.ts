@@ -1,7 +1,7 @@
 // Registers all ipcMain.handle() and ipcMain.on() listeners.
 // This is the entry point for every message the renderer sends — start session, save settings, get history, etc.
 import { ipcMain } from 'electron'
-import { detectCommonApps } from './appDetection/detectCommonWindowsApps.ts'
+import { detectCommonApps } from './appDetection/detectCommonApps.ts'
 import { requestPythonWorker, releasePythonWorker } from './python-bridge.ts'
 import {
   getLatestDesktopActivity,

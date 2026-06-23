@@ -85,24 +85,12 @@ function findExistingAppPath(candidatePaths: string[]) {
   for (const rawPath of candidatePaths) {
     const expandedPath = expandPath(rawPath)
 
-    console.log('[Taskmaster] Checking path:', {
-      rawPath,
-      expandedPath,
-    })
-
     if (!expandedPath) {
       continue
     }
 
     if (pathHasWildcard(expandedPath)) {
       const matchedPath = findWildcardPath(expandedPath)
-
-      // --- debug log ---
-      console.log('[Taskmaster] Wildcard path result:', {
-        expandedPath,
-        matchedPath,
-      })
-      // --- remove later ---
 
       if (matchedPath) {
         return matchedPath
@@ -113,14 +101,7 @@ function findExistingAppPath(candidatePaths: string[]) {
 
     const normalizedPath = path.normalize(expandedPath)
     try {
-      const exists = fs.existsSync(normalizedPath)
-
-      console.log('[Taskmaster] Path exists result:', {
-        normalizedPath,
-        exists,
-      })
-
-      if (exists) {
+      if (fs.existsSync(normalizedPath)) {
         return normalizedPath
       }
     } catch (error) {
