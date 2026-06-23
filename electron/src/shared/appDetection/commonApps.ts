@@ -1,8 +1,8 @@
 /**
  * Common desktop app catalogue used by Taskmaster onboarding.
  *
- * These definitions describe known Windows apps that Taskmaster can try to
- * detect on the user's computer.
+ * These definitions describe known desktop apps (Windows + macOS) that
+ * Taskmaster can try to detect on the user's computer.
  *
  * Browser websites/pages do not belong here. Browser activity rules live in:
  * shared/browserActivity/commonBrowserActivityRules.ts
@@ -107,6 +107,19 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     commonMacPaths: [
       '/Applications/Microsoft Edge.app',
       '~/Applications/Microsoft Edge.app',
+    ],
+    defaultStatus: 'allowed',
+  },
+  {
+    id: 'safari',
+    displayName: 'Safari',
+    category: 'browser',
+    // Safari for Windows was discontinued long ago, so there is no Windows build.
+    executableNames: [],
+    commonWindowsPaths: [],
+    commonMacPaths: [
+      '/Applications/Safari.app',
+      '/System/Applications/Safari.app',
     ],
     defaultStatus: 'allowed',
   },
