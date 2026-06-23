@@ -45,6 +45,7 @@ logs/
 .claude/
 .gemini/
 .codex/
+docs/codex-context.local.md
 .cursor/
 AGENTS.md
 GEMINI.md
