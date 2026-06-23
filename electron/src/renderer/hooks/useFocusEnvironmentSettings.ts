@@ -21,7 +21,7 @@ import {
 } from '../../shared/browserActivity/commonBrowserActivityRules.ts'
 
 export type AppCategory = 'productivity' | 'distraction'
-export type AppRuleStatus = 'allowed' | 'blocked'
+export type AppRuleStatus = 'allowed' | 'blocked' | 'ignored'
 
 export type FocusApp = {
   id: string
@@ -86,10 +86,36 @@ function loadFocusEnvironmentSettings(): FocusEnvironmentSettings | null {
   }
 
   try {
-    return JSON.parse(savedSettings) as FocusEnvironmentSettings
+    return mergeDefaultRules(JSON.parse(savedSettings) as FocusEnvironmentSettings)
   } catch {
     localStorage.removeItem(FOCUS_ENVIRONMENT_SETTINGS_KEY)
     return null
+  }
+}
+
+/**
+ * Adds newly shipped default rules to older saved settings without replacing
+ * the user's existing allow/block choices.
+ */
+function mergeDefaultRules(
+  savedSettings: FocusEnvironmentSettings
+): FocusEnvironmentSettings {
+  return {
+    ...savedSettings,
+    appRules: [
+      ...savedSettings.appRules,
+      ...defaultFocusApps.filter((defaultApp) => {
+        return !savedSettings.appRules.some((savedApp) => savedApp.id === defaultApp.id)
+      }),
+    ],
+    browserActivityRules: [
+      ...savedSettings.browserActivityRules,
+      ...defaultBrowserActivityRules.filter((defaultRule) => {
+        return !savedSettings.browserActivityRules.some(
+          (savedRule) => savedRule.id === defaultRule.id,
+        )
+      }),
+    ],
   }
 }
 
@@ -264,11 +290,40 @@ export function useFocusEnvironmentSettings() {
     }))
   }
 
-  function saveFocusEnvironmentSettings() {
-    localStorage.setItem(
-      FOCUS_ENVIRONMENT_SETTINGS_KEY,
-      JSON.stringify(settings)
+  /**
+   * Adds a new desktop app rule from the end-of-session unknown activity review.
+   */
+  function addAppRule(app: FocusApp) {
+    setSettings((currentSettings) =>
+      persistFocusEnvironmentSettings({
+        ...currentSettings,
+        appRules: [
+          ...currentSettings.appRules.filter((rule) => rule.id !== app.id),
+          app,
+        ],
+      }),
     )
+  }
+
+  /**
+   * Adds a browser page rule from the end-of-session unknown activity review.
+   */
+  function addBrowserActivityRule(rule: BrowserActivityRule) {
+    setSettings((currentSettings) =>
+      persistFocusEnvironmentSettings({
+        ...currentSettings,
+        browserActivityRules: [
+          ...currentSettings.browserActivityRules.filter(
+            (existingRule) => existingRule.id !== rule.id,
+          ),
+          rule,
+        ],
+      }),
+    )
+  }
+
+  function saveFocusEnvironmentSettings() {
+    persistFocusEnvironmentSettings(settings)
   }
 
   return {
@@ -280,9 +335,17 @@ export function useFocusEnvironmentSettings() {
     setSelectedBrowserId,
     setBlockSelectedBrowser,
     updateAppStatus,
+    addAppRule,
     saveFocusEnvironmentSettings,
     blockedBrowserActivityRules,
     flexibleBrowserActivityRules,
     updateBrowserActivityRuleStatus,
+    addBrowserActivityRule,
   }
+}
+
+function persistFocusEnvironmentSettings(settings: FocusEnvironmentSettings) {
+  localStorage.setItem(FOCUS_ENVIRONMENT_SETTINGS_KEY, JSON.stringify(settings))
+
+  return settings
 }

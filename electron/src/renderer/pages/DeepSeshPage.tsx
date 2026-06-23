@@ -7,8 +7,12 @@ import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
+import {
+  useFocusMonitoringSession,
+} from '../hooks/useFocusMonitoringSession'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
 import type { BrowserActivityPayload } from '../../shared/browserActivity'
+import type { DesktopActivityPayload } from '../../shared/focusMonitoring'
 import '../styles/deepSesh.css'
 
 export default function DeepSeshPage() {
@@ -18,6 +22,13 @@ export default function DeepSeshPage() {
   const stopTimer = timer.stop
   const [browserActivity, setBrowserActivity] =
     useState<BrowserActivityPayload | null>(null)
+  const [desktopActivity, setDesktopActivity] =
+    useState<DesktopActivityPayload | null>(null)
+  const focusMonitor = useFocusMonitoringSession({
+    isSessionActive: timer.isSessionActive,
+    browserActivity,
+    desktopActivity,
+  })
   const layoutClass = timer.isSessionActive
     ? 'deep-sesh-screen--active'
     : 'deep-sesh-screen--setup'
@@ -103,6 +114,13 @@ export default function DeepSeshPage() {
     })
   }, [])
 
+  /* Receives active desktop app snapshots from Electron main. */
+  useEffect(() => {
+    return window.taskmaster?.onDesktopActivity((activity) => {
+      setDesktopActivity(activity)
+    })
+  }, [])
+
   /**
    * Tells the local browser extension bridge when it may receive tab metadata.
    *
@@ -110,6 +128,10 @@ export default function DeepSeshPage() {
    */
   useEffect(() => {
     window.taskmaster?.setBrowserMonitoringActive(timer.isSessionActive)
+
+    return () => {
+      window.taskmaster?.setBrowserMonitoringActive(false)
+    }
   }, [timer.isSessionActive])
 
   /* Opens the mini timer window and reports IPC setup issues during development. */
@@ -191,9 +213,7 @@ export default function DeepSeshPage() {
             </div>
 
             {timer.isSessionActive && (
-              <FocusMonitorPanel
-                browserActivity={timer.isSessionActive ? browserActivity : null}
-              />
+              <FocusMonitorPanel focusMonitor={focusMonitor} />
             )}
           </section>
         </main>

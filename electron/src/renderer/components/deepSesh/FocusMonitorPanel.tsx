@@ -1,48 +1,75 @@
-// Shows browser extension activity during an active focus session.
-// This prototype reports active tab metadata only and does not classify or block.
+// Shows live focus monitoring during an active focus session.
+// Blocked activities warn only; Taskmaster does not close apps or block sites.
 
-import type { BrowserActivityPayload } from '../../../shared/browserActivity'
+import type { FocusMonitorViewState } from '../../hooks/useFocusMonitoringSession'
 
 type FocusMonitorPanelProps = {
-  browserActivity: BrowserActivityPayload | null
+  focusMonitor: FocusMonitorViewState
 }
 
 export default function FocusMonitorPanel({
-  browserActivity,
+  focusMonitor,
 }: FocusMonitorPanelProps) {
+  const { activity, classification, stats } = focusMonitor
+  const isBlocked = classification.status === 'blocked'
+  const isWarningVisible = focusMonitor.shouldShowWarning
+
   return (
-    <aside className="deep-sesh-monitor-panel" aria-label="Focus monitor">
+    <aside
+      className={`deep-sesh-monitor-panel ${
+        isWarningVisible ? 'deep-sesh-monitor-panel--warning' : ''
+      }`}
+      aria-label="Focus monitor"
+    >
       <div className="deep-sesh-monitor-status">
-        <span className="status-pill">Timer active</span>
-        <h2>Browser activity</h2>
+        <span className="status-pill">{getStatusLabel(classification.status)}</span>
+        <h2>{activity?.label ?? 'Waiting for activity'}</h2>
         <p className="muted-text">
-          {browserActivity
-            ? 'Extension connected through the local dev bridge.'
-            : 'Waiting for browser extension.'}
+          {isBlocked && !isWarningVisible
+            ? `Warning in ${focusMonitor.warningDelaySeconds} seconds if this stays active.`
+            : classification.reason}
         </p>
       </div>
 
       <div className="deep-sesh-monitor-current">
-        <span>Browser activity</span>
-        <strong>{browserActivity?.domain ?? 'Waiting for browser extension'}</strong>
+        <span>{activity?.kind === 'browser-page' ? 'Browser activity' : 'Active app'}</span>
+        <strong>{activity?.detail ?? 'Waiting for browser extension or app'}</strong>
       </div>
 
       <div className="deep-sesh-monitor-list">
-        <div>
-          <span>Title</span>
-          <strong>{browserActivity?.title ?? 'No active tab reported yet'}</strong>
+        <div className={`deep-sesh-monitor-rule deep-sesh-monitor-rule--${classification.status}`}>
+          <span>Status</span>
+          <strong>{getStatusLabel(classification.status)}</strong>
         </div>
 
         <div>
-          <span>Status</span>
-          <strong>{browserActivity ? 'Extension connected' : 'Waiting'}</strong>
+          <span>Rule</span>
+          <strong>{classification.matchedRuleLabel ?? 'No matching rule'}</strong>
         </div>
 
         <div>
           <span>Source</span>
-          <strong>{browserActivity?.browser ?? 'Chromium extension'}</strong>
+          <strong>{activity?.source ?? 'Waiting'}</strong>
+        </div>
+
+        <div>
+          <span>Distractions</span>
+          <strong>{stats.distractionEvents}</strong>
+        </div>
+
+        <div>
+          <span>Unknown found</span>
+          <strong>{stats.unknownCount}</strong>
         </div>
       </div>
     </aside>
   )
+}
+
+function getStatusLabel(status: FocusMonitorViewState['classification']['status']) {
+  if (status === 'allowed') return 'Allowed'
+  if (status === 'blocked') return 'Distracting'
+  if (status === 'ignored') return 'Ignored'
+
+  return 'Unknown'
 }
