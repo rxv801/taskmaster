@@ -4,18 +4,15 @@
 
 import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } from 'electron'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import {
   startBrowserActivityBridge,
   stopBrowserActivityBridge,
 } from './browser-activity-bridge.ts'
 import { registerIpcHandlers } from './ipc-handlers.ts'
 import { stopPythonWorker } from './python-bridge.ts'
+import trayIconPath from './tray-icon.png?asset'
 
-
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+// __dirname is provided by electron-vite's module banner in the bundled output.
 
 let tray: Tray | null = null
 let mainWindow: BrowserWindow | null = null
@@ -23,12 +20,26 @@ let miniTimerWindow: BrowserWindow | null = null
 let latestMiniTimerState: Record<string, unknown> | null = null
 let isMiniTimerPinned = true
 
-function getRendererUrl(hashRoute = '') {
-  return `http://localhost:5173${hashRoute}`
+// Loads the renderer into a window. In development, electron-vite exposes its
+// dev server URL via ELECTRON_RENDERER_URL; in a packaged build that variable
+// is unset, so we load the bundled index.html from disk instead. The optional
+// hashRoute (e.g. "/#/mini-timer") drives the renderer's HashRouter; for the
+// file:// case the leading "/#" is stripped so it can be passed as a hash.
+function loadRenderer(win: BrowserWindow, hashRoute = '') {
+  const devServerUrl = process.env['ELECTRON_RENDERER_URL']
+
+  if (devServerUrl) {
+    win.loadURL(`${devServerUrl}${hashRoute}`)
+    return
+  }
+
+  const indexHtml = path.join(__dirname, '../renderer/index.html')
+  const hash = hashRoute.replace(/^\/#/, '')
+  win.loadFile(indexHtml, hash ? { hash } : undefined)
 }
 
 function createTray() {
-  const icon = nativeImage.createFromPath(path.join(__dirname, 'tray-icon.png'))
+  const icon = nativeImage.createFromPath(trayIconPath)
   tray = new Tray(icon)
 
   const contextMenu = Menu.buildFromTemplate([
@@ -54,9 +65,13 @@ function createWindow() {
     minWidth: 1000,
     minHeight: 700,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      // The preload is bundled as an ES module (the app is "type": "module"),
+      // and Electron only loads ESM preloads when the renderer is not sandboxed.
+      // contextIsolation still keeps the renderer isolated from Node.
+      sandbox: false,
     },
   })
 
@@ -66,7 +81,7 @@ function createWindow() {
     mainWindow = null
   })
 
-  win.loadURL(getRendererUrl())
+  loadRenderer(win)
 
   return win
 }
@@ -89,9 +104,13 @@ function createMiniTimerWindow() {
     alwaysOnTop: isMiniTimerPinned,
     skipTaskbar: true,
     webPreferences: {
-      preload: path.join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
+      // The preload is bundled as an ES module (the app is "type": "module"),
+      // and Electron only loads ESM preloads when the renderer is not sandboxed.
+      // contextIsolation still keeps the renderer isolated from Node.
+      sandbox: false,
     },
   })
 
@@ -103,7 +122,7 @@ function createMiniTimerWindow() {
     sendMiniTimerStateToWindow()
   })
 
-  miniTimerWindow.loadURL(getRendererUrl('/#/mini-timer'))
+  loadRenderer(miniTimerWindow, '/#/mini-timer')
 
   return miniTimerWindow
 }
