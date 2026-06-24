@@ -23,11 +23,24 @@
     "asarUnpack": [
       "**/node_modules/active-win/**"
     ],
+    "extraResources": [
+      {
+        "from": "../python/dist/taskmaster_worker",
+        "to": "worker"
+      },
+      {
+        "from": "../python/models",
+        "to": "models"
+      }
+    ],
     "mac": {
       "target": [
         "dmg"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Taskmaster uses your camera during focus sessions to detect whether you're looking at the screen or distracted by your phone."
+      }
     }
   },
   "dependencies": {

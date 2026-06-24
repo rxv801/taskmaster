@@ -29,10 +29,15 @@ import onnxruntime as ort
 # Config
 # ---------------------------------------------------------------------------
 
-# Model path resolved relative to this file (python/cv/), so it works no
-# matter which directory the program is launched from.
+# Model path resolved relative to this file (python/cv/) by default, so it
+# works no matter which directory the program is launched from. In a packaged
+# build the models ship outside the frozen binary, so the app points us at them
+# via TASKMASTER_MODELS_DIR.
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(_THIS_DIR, "..", "models", "yolox_s.onnx")
+_MODELS_DIR = os.environ.get(
+    "TASKMASTER_MODELS_DIR", os.path.join(_THIS_DIR, "..", "models")
+)
+MODEL_PATH = os.path.join(_MODELS_DIR, "yolox_s.onnx")
 
 # YOLOX-S input resolution.
 INPUT_SIZE = (640, 640)

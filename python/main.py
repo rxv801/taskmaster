@@ -126,5 +126,13 @@ async def detection_socket(websocket: WebSocket) -> None:
 
 
 if __name__ == "__main__":
+    # Accept "--port N" so the packaged (frozen) binary takes the same argument
+    # the Electron app passes; default to 8765 for direct runs.
+    import sys
+
+    port = 8765
+    if "--port" in sys.argv:
+        port = int(sys.argv[sys.argv.index("--port") + 1])
+
     # host 127.0.0.1 = localhost only (not exposed to the network).
-    uvicorn.run(app, host="127.0.0.1", port=8765)
+    uvicorn.run(app, host="127.0.0.1", port=port)
