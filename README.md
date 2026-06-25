@@ -30,7 +30,7 @@ Electron (TypeScript)                    Python (CV Worker)
 | CV / ML backend | Python (OpenCV, MediaPipe) |
 | Communication | WebSocket (FastAPI + uvicorn) |
 | Activity monitoring | `active-win`, `ps-list` (Node) |
-| Build tooling | Vite, electron-builder |
+| Build tooling | electron-vite, electron-builder, PyInstaller |
 
 ## MVP Features
 
@@ -60,6 +60,8 @@ taskmaster/
 │   ├── README.md              # CV worker docs
 │   ├── requirements.txt       # Python deps (installed by setup.sh)
 │   ├── main.py                # FastAPI + WebSocket server
+│   ├── build_worker.sh        # freezes the CV worker into a standalone binary
+│   ├── taskmaster_worker.spec # PyInstaller recipe for the frozen worker
 │   └── cv/
 │       ├── camera.py          # webcam capture (owns the camera handle)
 │       ├── detection_loop.py  # camera -> detectors -> events loop
@@ -67,6 +69,7 @@ taskmaster/
 │       └── gaze_detector.py   # gaze/face detection (planned)
 ├── setup.sh                   # one-shot install for Python + Electron (macOS/Linux)
 ├── setup.ps1                  # same, for Windows PowerShell
+├── build-macos-app.sh         # one-shot build of the distributable macOS .app
 ├── PLAN.md
 └── README.md
 ```
@@ -135,6 +138,47 @@ Start the Electron app (in a separate terminal):
 cd electron
 npm run dev
 ```
+
+## Building the desktop app (macOS)
+
+To produce a double-clickable `Taskmaster.app` (and a `.dmg`) that runs on a Mac
+with no Python or Node installed, run two scripts from the repo root — first
+`setup.sh` to install everything (once), then `build-macos-app.sh` to build:
+
+```bash
+./setup.sh            # once: installs deps + downloads the models
+./build-macos-app.sh  # builds the app
+```
+
+`build-macos-app.sh` is build-only (it does not install dependencies) and does
+these steps in order:
+
+1. installs PyInstaller into the venv
+2. `python/build_worker.sh` — freezes the CV worker into a standalone binary
+3. `npm run dist:mac` — bundles and packages the app with electron-builder
+
+It checks up front that `setup.sh` has been run and exits with a clear message
+if the venv, node modules, or models are missing.
+
+The result lands in `electron/release/`:
+
+- `Taskmaster-<version>-arm64.dmg`
+- `mac-arm64/Taskmaster.app`
+
+Notes:
+
+- **Apple Silicon (arm64) only** for now. The build bundles a frozen CV worker
+  that's architecture-specific, so it must be built on an arm64 Mac.
+- The build is **unsigned**, so the first launch needs a right-click → **Open**
+  to get past Gatekeeper. After that it opens normally.
+- On first launch the app asks for **Camera** access (for gaze/phone detection),
+  and live focus tracking also needs **Accessibility** and **Screen Recording**
+  granted in System Settings.
+
+If you only want to change one part, the steps can be run individually in the
+same order — freezing the worker (`python/build_worker.sh`) must always happen
+before packaging (`npm run dist:mac`), since the package copies the frozen
+worker into the app.
 
 ## License
 
