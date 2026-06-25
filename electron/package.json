@@ -9,7 +9,7 @@
     "build": "tsc -b && electron-vite build",
     "preview": "electron-vite preview",
     "lint": "eslint .",
-    "dist:mac": "npm run build && electron-builder --mac"
+    "dist:mac": "npm run build && node scripts/preflight-dist.mjs && electron-builder --mac"
   },
   "build": {
     "appId": "com.taskmaster.app",
