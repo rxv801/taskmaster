@@ -68,6 +68,12 @@ function BrowserActivityRuleSection({
                 </span>
               </div>
 
+              <span
+                className={`focus-app-rule-status focus-app-rule-status--${rule.status}`}
+              >
+                {isBlocked ? 'Blocked' : 'Allowed'}
+              </span>
+
               <label
                 className={`focus-app-toggle ${
                   isBlocked ? 'focus-app-toggle--blocked' : ''
@@ -151,6 +157,12 @@ export default function BrowserActivitySelectionStep({
                 open.
                 </p>
             </div>
+
+            <p className="focus-app-rules-hint muted-text">
+                Turn a toggle <strong>on</strong> to block a website during
+                focus sessions; leave it <strong>off</strong> to allow it. Each
+                row shows its current state.
+            </p>
 
             <div className="browser-activity-rules" aria-label="Browser activity focus rules">
                 <BrowserActivityRuleSection

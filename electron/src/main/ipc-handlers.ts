@@ -1,7 +1,7 @@
 // Registers all ipcMain.handle() and ipcMain.on() listeners.
 // This is the entry point for every message the renderer sends — start session, save settings, get history, etc.
 import { ipcMain } from 'electron'
-import { detectCommonWindowsApps } from './appDetection/detectCommonWindowsApps.ts'
+import { detectCommonApps } from './appDetection/detectCommonApps.ts'
 import { requestPythonWorker, releasePythonWorker } from './python-bridge.ts'
 import {
   getLatestDesktopActivity,
@@ -22,7 +22,7 @@ export function registerIpcHandlers() {
   ipcMain.removeAllListeners('taskmaster:desktop-monitoring-stop')
 
   ipcMain.handle('taskmaster:detect-common-apps', () => {
-    const detectedApps = detectCommonWindowsApps()
+    const detectedApps = detectCommonApps()
 
     console.log('[Taskmaster] Detected common apps:')
     console.log(JSON.stringify(detectedApps, null, 2))

@@ -1102,13 +1102,41 @@ a {
 .focus-app-rule-row {
   display: grid;
   min-height: 2.25rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: var(--space-sm);
   padding: 0.30rem 0.48rem;
   border: 1px solid color-mix(in srgb, var(--color-border) 76%, transparent);
   border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--color-bg-card) 66%, transparent);
+}
+
+/* Current allow/block state, shown as a word so the toggle isn't ambiguous. */
+.focus-app-rule-status {
+  min-width: 4.2rem;
+  text-align: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  font-size: clamp(0.68rem, 0.6vw, 0.74rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.focus-app-rule-status--allowed {
+  color: color-mix(in srgb, var(--color-focused) 86%, white);
+  background: color-mix(in srgb, var(--color-focused) 16%, transparent);
+}
+
+.focus-app-rule-status--blocked {
+  color: color-mix(in srgb, var(--color-distracted) 86%, white);
+  background: color-mix(in srgb, var(--color-distracted) 18%, transparent);
+}
+
+.focus-app-rules-hint {
+  margin: 0 0 var(--space-sm);
+  font-size: clamp(0.76rem, 0.7vw, 0.84rem);
+  line-height: 1.4;
 }
 
 .focus-app-rule-name {

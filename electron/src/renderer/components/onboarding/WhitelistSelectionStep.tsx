@@ -57,6 +57,12 @@ function FocusAppRuleSection({
           <div className="focus-app-rule-row" key={app.id}>
             <span className="focus-app-rule-name">{app.name}</span>
 
+            <span
+              className={`focus-app-rule-status focus-app-rule-status--${app.status}`}
+            >
+              {app.status === 'blocked' ? 'Blocked' : 'Allowed'}
+            </span>
+
             <label
               className={`focus-app-toggle ${
                 app.status === 'blocked' ? 'focus-app-toggle--blocked' : ''
@@ -176,6 +182,12 @@ export default function FocusEnvironmentStep({
               Unknown apps can be reviewed after each session.
             </p>
           </div>
+
+          <p className="focus-app-rules-hint muted-text">
+            Turn a toggle <strong>on</strong> to block an app during focus
+            sessions; leave it <strong>off</strong> to allow it. Each row shows
+            its current state.
+          </p>
 
           <div
             className={`focus-app-rules ${
