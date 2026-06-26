@@ -38,10 +38,15 @@ from mediapipe.tasks.python import vision
 # Config
 # ---------------------------------------------------------------------------
 
-# Model path resolved relative to this file (python/cv/), so it works no
-# matter which directory the program is launched from.
+# Model path resolved relative to this file (python/cv/) by default, so it
+# works no matter which directory the program is launched from. In a packaged
+# build the models ship outside the frozen binary, so the app points us at them
+# via TASKMASTER_MODELS_DIR.
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(_THIS_DIR, "..", "models", "face_landmarker.task")
+_MODELS_DIR = os.environ.get(
+    "TASKMASTER_MODELS_DIR", os.path.join(_THIS_DIR, "..", "models")
+)
+MODEL_PATH = os.path.join(_MODELS_DIR, "face_landmarker.task")
 
 # How far the head may turn from facing-the-screen before we call it "away".
 # Tune these against the live test: turn your head until it flips.
