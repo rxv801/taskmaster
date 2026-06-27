@@ -9,6 +9,7 @@
 // The renderer connects to the worker's WebSocket directly to stream frames, so
 // this module only owns the process lifecycle, not the detection data.
 
+import { app } from 'electron'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import path from 'node:path'
@@ -30,6 +31,54 @@ function venvPythonPath(): string {
   const binDir = isWindows ? 'Scripts' : 'bin'
   const executable = isWindows ? 'python.exe' : 'python'
   return path.join(pythonProjectDir, '.venv', binDir, executable)
+}
+
+type WorkerSpawnConfig = {
+  command: string
+  args: string[]
+  options: Parameters<typeof spawn>[2]
+  // The executable to existence-check, and a message if it's missing.
+  executable: string
+  missingMessage: string
+}
+
+// Describes how to launch the CV worker for the current environment. In a
+// packaged build it's a frozen (PyInstaller) binary shipped in the app's
+// resources, with the ML models alongside it; in development it runs from the
+// project venv via uvicorn. Either way a missing executable is handled by the
+// caller (detection stays off, the rest of the app is unaffected).
+function workerSpawnConfig(): WorkerSpawnConfig {
+  if (app.isPackaged) {
+    const isWindows = process.platform === 'win32'
+    const workerBin = path.join(
+      process.resourcesPath,
+      'worker',
+      isWindows ? 'taskmaster_worker.exe' : 'taskmaster_worker',
+    )
+    const modelsDir = path.join(process.resourcesPath, 'models')
+    return {
+      command: workerBin,
+      args: ['--port', String(WORKER_PORT)],
+      options: {
+        env: { ...process.env, TASKMASTER_MODELS_DIR: modelsDir },
+      },
+      executable: workerBin,
+      missingMessage: `[python] CV worker binary not found at ${workerBin}`,
+    }
+  }
+
+  // Development: equivalent to running, from the python/ folder:
+  //   .venv/bin/python -m uvicorn main:app --port 8765
+  const pythonPath = venvPythonPath()
+  return {
+    command: pythonPath,
+    args: ['-m', 'uvicorn', 'main:app', '--port', String(WORKER_PORT)],
+    options: { cwd: pythonProjectDir },
+    executable: pythonPath,
+    missingMessage:
+      `[python] CV worker venv not found at ${pythonPath}\n` +
+      `         Run ./setup.sh (macOS/Linux) or setup.ps1 (Windows) to create it.`,
+  }
 }
 
 // The running worker, or null when it isn't running.
@@ -90,27 +139,17 @@ function startPythonWorker(): void {
   }
   stopping = false
 
-  // The worker only runs from the project venv (Python 3.11 + the CV deps). If
-  // it's missing — e.g. setup was never run, or a Windows clone that skipped
-  // setup.ps1 — spawning would fail with a cryptic ENOENT, so flag it loudly
-  // and bail. Detection stays off until the user runs setup; the rest of the
-  // app is unaffected.
-  const pythonPath = venvPythonPath()
-  if (!existsSync(pythonPath)) {
-    console.error(
-      `[python] CV worker venv not found at ${pythonPath}\n` +
-        `         Run ./setup.sh (macOS/Linux) or setup.ps1 (Windows) to create it.`,
-    )
+  // If the worker executable is missing — e.g. setup was never run in dev, or
+  // the frozen binary didn't ship in a packaged build — spawning would fail
+  // with a cryptic ENOENT, so flag it loudly and bail. Detection stays off; the
+  // rest of the app is unaffected.
+  const config = workerSpawnConfig()
+  if (!existsSync(config.executable)) {
+    console.error(config.missingMessage)
     return
   }
 
-  // Equivalent to running, from the python/ folder:
-  //   .venv/bin/python -m uvicorn main:app --port 8765
-  worker = spawn(
-    pythonPath,
-    ['-m', 'uvicorn', 'main:app', '--port', String(WORKER_PORT)],
-    { cwd: pythonProjectDir },
-  )
+  worker = spawn(config.command, config.args, config.options)
 
   // Mirror the worker's output into the app console for debugging. uvicorn logs
   // to stderr, so both streams are forwarded.
