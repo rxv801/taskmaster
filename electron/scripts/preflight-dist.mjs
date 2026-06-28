@@ -12,11 +12,23 @@ import { fileURLToPath } from 'node:url'
 const here = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.join(here, '..', '..')
 
+const isWindows = process.platform === 'win32'
+const workerExecutable = isWindows ? 'taskmaster_worker.exe' : 'taskmaster_worker'
+const workerBuildHint = isWindows
+  ? 'run .\\python\\build_worker.ps1 or .\\build-windows-app.ps1 from the repo root'
+  : 'run python/build_worker.sh (or ./build-macos-app.sh from the repo root)'
+
 const required = [
   {
     label: 'frozen CV worker',
-    file: path.join(repoRoot, 'python', 'dist', 'taskmaster_worker', 'taskmaster_worker'),
-    hint: 'run python/build_worker.sh (or ./build-macos-app.sh from the repo root)',
+    file: path.join(
+      repoRoot,
+      'python',
+      'dist',
+      'taskmaster_worker',
+      workerExecutable,
+    ),
+    hint: workerBuildHint,
   },
   {
     label: 'phone-detection model',

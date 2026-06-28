@@ -61,6 +61,7 @@ taskmaster/
 │   ├── requirements.txt       # Python deps (installed by setup.sh)
 │   ├── main.py                # FastAPI + WebSocket server
 │   ├── build_worker.sh        # freezes the CV worker into a standalone binary
+│   ├── build_worker.ps1       # Windows version of the worker freeze step
 │   ├── taskmaster_worker.spec # PyInstaller recipe for the frozen worker
 │   └── cv/
 │       ├── camera.py          # webcam capture (owns the camera handle)
@@ -70,6 +71,7 @@ taskmaster/
 ├── setup.sh                   # one-shot install for Python + Electron (macOS/Linux)
 ├── setup.ps1                  # same, for Windows PowerShell
 ├── build-macos-app.sh         # one-shot build of the distributable macOS .app
+├── build-windows-app.ps1      # one-shot build of the distributable Windows app
 ├── PLAN.md
 └── README.md
 ```
@@ -179,6 +181,39 @@ If you only want to change one part, the steps can be run individually in the
 same order — freezing the worker (`python/build_worker.sh`) must always happen
 before packaging (`npm run dist:mac`), since the package copies the frozen
 worker into the app.
+
+## Building the desktop app (Windows)
+
+To produce a Windows installer and unpacked app that run without system Python
+or Node, run the setup script once and then the Windows build script from the
+repo root:
+
+```powershell
+.\setup.ps1
+.\build-windows-app.ps1
+```
+
+`build-windows-app.ps1` is build-only. It checks that setup has already created
+the Python venv, installed Electron dependencies, and downloaded the ML models,
+then runs these steps:
+
+1. installs PyInstaller into the venv
+2. `python\build_worker.ps1` — freezes the CV worker into a standalone `.exe`
+3. `npm run dist:win` — bundles and packages the app with electron-builder
+
+The result lands in `electron\release\`:
+
+- `Taskmaster Setup <version>.exe`
+- `win-unpacked\Taskmaster.exe`
+
+Notes:
+
+- The build is **unsigned**, so Windows SmartScreen may warn during testing.
+- The packaged app includes the frozen CV worker and model files through
+  electron-builder `extraResources`.
+- Packaging rebuilds the native `active-win` dependency, so Windows needs
+  **Build Tools for Visual Studio** with the **Desktop development with C++**
+  workload installed.
 
 ## License
 
