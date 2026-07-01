@@ -12,6 +12,8 @@
 # they ship alongside the app via electron-builder extraResources and are
 # located at runtime through the TASKMASTER_MODELS_DIR env var.
 
+import platform
+
 from PyInstaller.utils.hooks import collect_all
 
 datas = []
@@ -32,6 +34,13 @@ hiddenimports = [
     "cv.phone_detector",
     "cv.gaze_detector",
 ]
+
+# PyInstaller's target_arch is only meaningful for macOS universal/arm builds.
+# Leaving it unconditional breaks Windows, so only pin it when building on an
+# Apple Silicon Mac. Windows and other platforms should use the host default.
+exe_kwargs = {}
+if platform.system() == "Darwin" and platform.machine() == "arm64":
+    exe_kwargs["target_arch"] = "arm64"
 
 # mediapipe ships runtime graph/model data (.binarypb, .tflite) and onnxruntime
 # ships native provider libraries that aren't discovered by import analysis.
@@ -66,7 +75,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=True,
-    target_arch="arm64",
+    **exe_kwargs,
 )
 
 coll = COLLECT(
