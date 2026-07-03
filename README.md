@@ -4,6 +4,9 @@ A desktop productivity app that uses computer vision to keep you focused. It det
 
 ## Architecture
 
+For a full walkthrough of how everything is wired — the flows, where the logic
+lives, and why — see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ```
 Electron (TypeScript)                    Python (CV Worker)
 ┌──────────────────────┐                ┌──────────────────────┐
