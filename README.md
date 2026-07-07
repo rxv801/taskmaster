@@ -4,15 +4,18 @@ A desktop productivity app that uses computer vision to keep you focused. It det
 
 ## Architecture
 
+For a full walkthrough of how everything is wired — the flows, where the logic
+lives, and why — see [ARCHITECTURE.md](ARCHITECTURE.md).
+
 ```
 Electron (TypeScript)                    Python (CV Worker)
 ┌──────────────────────┐                ┌──────────────────────┐
 │ Main Process         │   WebSocket    │ FastAPI Server       │
-│ ├─ Spawns Python     │◄──────────────►│ ├─ OpenCV capture    │
-│ ├─ Activity monitor  │   localhost    │ ├─ MediaPipe Face    │
-│ ├─ Session manager   │                │ ├─ MediaPipe Hands   │
-│ ├─ Notifications     │                │ └─ Phone detector    │
-│ └─ IPC to renderer   │                └──────────────────────┘
+│ ├─ Spawns Python     │◄──────────────►│ ├─ OpenCV decode     │
+│ ├─ Activity monitor  │   localhost    │ ├─ Gaze (MediaPipe)  │
+│ ├─ Session manager   │                │ └─ Phone (YOLOX/ONNX)│
+│ ├─ Notifications     │                └──────────────────────┘
+│ └─ IPC to renderer   │
 │                      │
 │ Renderer (React+TS)  │
 │ ├─ Dashboard         │
@@ -27,15 +30,15 @@ Electron (TypeScript)                    Python (CV Worker)
 |-------|------|
 | App shell | Electron + TypeScript |
 | Frontend | React + TypeScript |
-| CV / ML backend | Python (OpenCV, MediaPipe) |
+| CV / ML backend | Python (OpenCV, MediaPipe, ONNX Runtime) |
 | Communication | WebSocket (FastAPI + uvicorn) |
-| Activity monitoring | `active-win`, `ps-list` (Node) |
+| Activity monitoring | `active-win` (Node) |
 | Build tooling | electron-vite, electron-builder, PyInstaller |
 
 ## MVP Features
 
-- **Gaze detection** — MediaPipe Face Mesh detects if you're looking at the screen
-- **Phone detection** — MediaPipe Hand Landmarks spots phone-holding gestures
+- **Gaze detection** — MediaPipe FaceLandmarker reads head pose (yaw/pitch) to tell if you're looking at the screen
+- **Phone detection** — a YOLOX object-detection model (run locally via ONNX Runtime) spots a phone in frame
 - **App activity monitor** — tracks the active window and flags disallowed apps during focus sessions
 - **Focus notifications** — system notification when you've been distracted for too long
 
@@ -55,7 +58,7 @@ taskmaster/
 │       │   ├── App.tsx
 │       │   └── components/
 │       └── preload/
-│           └── index.ts
+│           └── index.js
 ├── python/
 │   ├── README.md              # CV worker docs
 │   ├── requirements.txt       # Python deps (installed by setup.sh)
@@ -66,8 +69,8 @@ taskmaster/
 │   └── cv/
 │       ├── camera.py          # webcam capture (owns the camera handle)
 │       ├── detection_loop.py  # camera -> detectors -> events loop
-│       ├── phone_detector.py  # phone-in-frame detection
-│       └── gaze_detector.py   # gaze/face detection (planned)
+│       ├── phone_detector.py  # phone-in-frame detection (YOLOX / ONNX Runtime)
+│       └── gaze_detector.py   # gaze detection via head pose (MediaPipe)
 ├── setup.sh                   # one-shot install for Python + Electron (macOS/Linux)
 ├── setup.ps1                  # same, for Windows PowerShell
 ├── build-macos-app.sh         # one-shot build of the distributable macOS .app
@@ -118,27 +121,21 @@ npm install
 
 ## Development
 
-Run the CV detection loop directly (current entry point while the
-WebSocket server is being built):
-
-```bash
-cd python
-source .venv/bin/activate
-python cv/detection_loop.py        # Ctrl+C to stop
-```
-
-Later, the FastAPI + WebSocket server will be the entry point instead:
-
-```bash
-cd python
-uvicorn main:app --port 8765
-```
-
-Start the Electron app (in a separate terminal):
+For normal development, just start the Electron app. It spawns the Python CV
+worker automatically when a session or onboarding camera check needs detection:
 
 ```bash
 cd electron
 npm run dev
+```
+
+To run the CV worker on its own — e.g. to debug detection without the UI — start
+its WebSocket server directly:
+
+```bash
+cd python
+source .venv/bin/activate
+uvicorn main:app --port 8765       # health check at http://127.0.0.1:8765/
 ```
 
 ## Building the desktop app (macOS)
