@@ -19,10 +19,54 @@ import {
 
 const WARNING_DELAY_MS = 3000
 
+// The camera can surface two distractions of its own, independent of which app
+// or site is focused: a phone in view, or the user looking away from the screen.
+// Each gets a stable key so one continuous stretch counts as a single event
+// (see the dedupe-by-key in handleBlockedActivity).
+const PHONE_DISTRACTION_ACTIVITY: FocusActivity = {
+  kind: 'desktop-app',
+  key: 'camera:phone',
+  label: 'On your phone',
+  detail: 'Phone detected by the camera',
+  source: 'active-window',
+  timestamp: 0,
+}
+
+const PHONE_DISTRACTION_CLASSIFICATION: FocusClassification = {
+  status: 'blocked',
+  reason: 'Phone detected by the camera.',
+  matchedRuleLabel: 'Phone (camera)',
+}
+
+const GAZE_DISTRACTION_ACTIVITY: FocusActivity = {
+  kind: 'desktop-app',
+  key: 'camera:gaze',
+  label: 'Looking away',
+  detail: 'Not looking at the screen',
+  source: 'active-window',
+  timestamp: 0,
+}
+
+const GAZE_DISTRACTION_CLASSIFICATION: FocusClassification = {
+  status: 'blocked',
+  reason: 'You looked away from the screen.',
+  matchedRuleLabel: 'Gaze (camera)',
+}
+
+// Keep a camera distraction latched briefly after the last positive frame, so a
+// one-frame gap doesn't split a single stretch into several distractions.
+const CAMERA_DISTRACTION_GRACE_MS = 2000
+
+type CameraDistraction = 'phone' | 'gaze' | null
+
 type UseFocusMonitoringSessionOptions = {
   isSessionActive: boolean
   browserActivity: BrowserActivityPayload | null
   desktopActivity: DesktopActivityPayload | null
+  // True while the camera currently sees a phone (from the CV worker).
+  phoneDetected: boolean
+  // True while the camera reports the user is not looking at the screen.
+  lookingAway: boolean
 }
 
 export type FocusMonitorViewState = {
@@ -59,6 +103,8 @@ export function useFocusMonitoringSession({
   isSessionActive,
   browserActivity,
   desktopActivity,
+  phoneDetected,
+  lookingAway,
 }: UseFocusMonitoringSessionOptions): FocusMonitorViewState {
   const {
     settings,
@@ -83,7 +129,7 @@ export function useFocusMonitoringSession({
     reason: 'No activity detected yet.',
   })
 
-  const activity = useMemo(() => {
+  const baseActivity = useMemo(() => {
     return getCurrentActivity({
       browserActivity,
       desktopActivity,
@@ -92,9 +138,48 @@ export function useFocusMonitoringSession({
     })
   }, [browserActivity, desktopActivity, sessionStartedAt, settings])
 
-  const classification = useMemo(() => {
-    return classifyActivity(activity, settings)
-  }, [activity, settings])
+  const baseClassification = useMemo(() => {
+    return classifyActivity(baseActivity, settings)
+  }, [baseActivity, settings])
+
+  // Latest camera signals, read by the session ticker below. Refs keep the
+  // ticker from re-subscribing on every frame; the timestamps drive the grace
+  // period that keeps a distraction latched through brief detection gaps.
+  const phoneDetectedRef = useRef(false)
+  const lastPhoneDetectedAtRef = useRef(0)
+  const lookingAwayRef = useRef(false)
+  const lastLookingAwayAtRef = useRef(0)
+  useEffect(() => {
+    phoneDetectedRef.current = phoneDetected
+    if (phoneDetected) {
+      lastPhoneDetectedAtRef.current = Date.now()
+    }
+  }, [phoneDetected])
+  useEffect(() => {
+    lookingAwayRef.current = lookingAway
+    if (lookingAway) {
+      lastLookingAwayAtRef.current = Date.now()
+    }
+  }, [lookingAway])
+
+  // Which camera distraction the ticker currently sees (if any). The ticker owns
+  // the timing and updates this. A camera distraction takes priority over the
+  // focused app/site, and a phone in view takes priority over looking away.
+  const [cameraDistraction, setCameraDistraction] =
+    useState<CameraDistraction>(null)
+
+  const activity =
+    cameraDistraction === 'phone'
+      ? PHONE_DISTRACTION_ACTIVITY
+      : cameraDistraction === 'gaze'
+        ? GAZE_DISTRACTION_ACTIVITY
+        : baseActivity
+  const classification =
+    cameraDistraction === 'phone'
+      ? PHONE_DISTRACTION_CLASSIFICATION
+      : cameraDistraction === 'gaze'
+        ? GAZE_DISTRACTION_CLASSIFICATION
+        : baseClassification
 
   const reviewableUnknownActivities = useMemo(() => {
     return unknownActivities.filter((item) => {
@@ -194,11 +279,13 @@ export function useFocusMonitoringSession({
     })
   }, [])
 
-  /* Keeps the latest derived values available to the session ticker. */
+  /* Keeps the latest app/site values available to the session ticker. Phone
+   * detection is handled separately in the ticker, so these track the base
+   * (non-phone) activity to avoid double-counting. */
   useEffect(() => {
-    activityRef.current = activity
-    classificationRef.current = classification
-  }, [activity, classification])
+    activityRef.current = baseActivity
+    classificationRef.current = baseClassification
+  }, [baseActivity, baseClassification])
 
   /* Ticks one monitoring loop for warning delay, unknown tracking, and stats. */
   useEffect(() => {
@@ -206,10 +293,35 @@ export function useFocusMonitoringSession({
 
     const intervalId = window.setInterval(() => {
       const tickNow = Date.now()
+      setNow(tickNow)
+
+      // Camera distractions come ahead of any app/site, and each stays latched
+      // for a short grace period after its last positive frame. A phone in view
+      // wins over looking away.
+      const onPhone =
+        phoneDetectedRef.current ||
+        tickNow - lastPhoneDetectedAtRef.current < CAMERA_DISTRACTION_GRACE_MS
+      const isLookingAway =
+        lookingAwayRef.current ||
+        tickNow - lastLookingAwayAtRef.current < CAMERA_DISTRACTION_GRACE_MS
+      const currentCameraDistraction: CameraDistraction = onPhone
+        ? 'phone'
+        : isLookingAway
+          ? 'gaze'
+          : null
+      setCameraDistraction(currentCameraDistraction)
+
+      if (currentCameraDistraction === 'phone') {
+        handleBlockedActivity(PHONE_DISTRACTION_ACTIVITY, tickNow)
+        return
+      }
+      if (currentCameraDistraction === 'gaze') {
+        handleBlockedActivity(GAZE_DISTRACTION_ACTIVITY, tickNow)
+        return
+      }
+
       const currentActivity = activityRef.current
       const currentClassification = classificationRef.current
-
-      setNow(tickNow)
 
       if (!currentActivity) {
         closeActiveDistraction(tickNow)
@@ -269,6 +381,7 @@ export function useFocusMonitoringSession({
         setHasCompletedSessionSummary(false)
         setStats(initialStats)
         setWarningStartedAt(null)
+        setCameraDistraction(null)
         activeDistractionRef.current = null
         distractionCountsRef.current = {}
       }, 0)

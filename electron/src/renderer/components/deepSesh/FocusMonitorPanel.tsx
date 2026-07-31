@@ -2,17 +2,28 @@
 // Blocked activities warn only; Taskmaster does not close apps or block sites.
 
 import type { FocusMonitorViewState } from '../../hooks/useFocusMonitoringSession'
+import type { CvStatus } from '../../hooks/useCvDetection'
 
 type FocusMonitorPanelProps = {
   focusMonitor: FocusMonitorViewState
+  camera?: CvStatus
 }
 
 export default function FocusMonitorPanel({
   focusMonitor,
+  camera,
 }: FocusMonitorPanelProps) {
   const { activity, classification, stats } = focusMonitor
   const isBlocked = classification.status === 'blocked'
   const isWarningVisible = focusMonitor.shouldShowWarning
+
+  const phoneDetected = camera?.phone?.status === 'detected'
+  const lookingAway = camera?.gaze?.status === 'distracted'
+  const gazeLabel = camera?.gaze
+    ? camera.gaze.status === 'focused'
+      ? 'On screen'
+      : 'Looking away'
+    : '—'
 
   return (
     <aside
@@ -62,6 +73,33 @@ export default function FocusMonitorPanel({
           <strong>{stats.unknownCount}</strong>
         </div>
       </div>
+
+      {camera && (
+        <div className="deep-sesh-monitor-list" aria-label="Camera detection">
+          <div
+            className={`deep-sesh-monitor-rule deep-sesh-monitor-rule--${
+              phoneDetected ? 'blocked' : 'allowed'
+            }`}
+          >
+            <span>Phone</span>
+            <strong>{phoneDetected ? 'Detected' : 'Not seen'}</strong>
+          </div>
+
+          <div
+            className={`deep-sesh-monitor-rule deep-sesh-monitor-rule--${
+              lookingAway ? 'blocked' : 'allowed'
+            }`}
+          >
+            <span>Gaze</span>
+            <strong>{gazeLabel}</strong>
+          </div>
+
+          <div>
+            <span>Camera</span>
+            <strong>{camera.connected ? 'Connected' : 'Connecting…'}</strong>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
