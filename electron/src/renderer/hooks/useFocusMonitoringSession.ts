@@ -535,6 +535,18 @@ function isBrowserActivityFromCurrentSession(
   )
 }
 
+// Taskmaster's own window never counts as activity: focusing the app itself
+// (e.g. to check the timer or stats) should not be tracked as a distraction.
+// Packaged the app reports as "Taskmaster"; in dev it reports as "Electron".
+const OWN_APP_NAMES = ['taskmaster', 'electron']
+
+function isOwnAppActivity(activity: FocusActivity): boolean {
+  return (
+    activity.kind === 'desktop-app' &&
+    OWN_APP_NAMES.includes(activity.label.trim().toLowerCase())
+  )
+}
+
 function classifyActivity(
   activity: FocusActivity | null,
   settings: ReturnType<typeof useFocusEnvironmentSettings>['settings'],
@@ -543,6 +555,13 @@ function classifyActivity(
     return {
       status: 'unknown',
       reason: 'No activity detected yet.',
+    }
+  }
+
+  if (isOwnAppActivity(activity)) {
+    return {
+      status: 'ignored',
+      reason: 'Taskmaster is ignored during sessions.',
     }
   }
 
