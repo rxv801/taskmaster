@@ -388,6 +388,11 @@ a {
   position: absolute;
   inset: 0;
   z-index: 1;
+  /* Steps are pinned to the viewport height, so a tall step (e.g. the browser
+   * activity list) would otherwise be clipped. Allow it to scroll vertically
+   * while keeping the horizontal slide animation clipped. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .onboarding-step--exit {
@@ -712,6 +717,9 @@ a {
   background:
     radial-gradient(circle at 62% 18%, color-mix(in srgb, var(--color-accent) 9%, transparent), transparent 24rem),
     linear-gradient(180deg, #080808 0%, var(--color-bg-main) 50%, #070707 100%);
+  /* When the content is tall enough to scroll, leave room so the last rows
+   * aren't hidden behind the fixed Back/Continue bar. */
+  padding-bottom: clamp(6rem, 12vh, 9rem);
 }
 
 .focus-environment-layout,
