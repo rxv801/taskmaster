@@ -62,9 +62,24 @@ echo "==> [2/3] Freezing the Python CV worker (this takes a few minutes)"
 echo "==> [3/3] Packaging the Electron app"
 ( cd electron && npm run dist:mac )
 
+# --- 4. Ad-hoc re-sign -------------------------------------------------------
+# electron-builder skips signing without a Developer ID, leaving the default
+# Electron "linker-signed" stub (Identifier=Electron, resources not sealed).
+# macOS then can't attach a persistent permission (TCC) grant to the app, so it
+# re-prompts for camera / accessibility every time. A proper deep ad-hoc sign
+# seals the bundle under its real identifier (com.taskmaster.app) so the grants
+# stick. This isn't a Developer ID — for sharing with others you still need one
+# plus notarization — but it fixes the repeated prompts for local use.
+APP="electron/release/mac-arm64/Taskmaster.app"
+if [ -d "$APP" ]; then
+  echo "==> [4/4] Ad-hoc signing so macOS remembers permissions"
+  codesign --force --deep --sign - "$APP"
+  codesign --verify --deep --strict "$APP" && echo "    signature OK"
+fi
+
 echo ""
 echo "Done. Build output:"
 ls -1 electron/release/*.dmg 2>/dev/null || true
 echo "  electron/release/mac-arm64/Taskmaster.app"
 echo ""
-echo "First launch is unsigned: right-click the .app -> Open to get past Gatekeeper."
+echo "First launch is unsigned to Apple: right-click the .app -> Open once."

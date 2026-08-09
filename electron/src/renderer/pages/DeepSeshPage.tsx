@@ -11,6 +11,7 @@ import {
   useFocusMonitoringSession,
 } from '../hooks/useFocusMonitoringSession'
 import { useDeepSeshTimer } from '../hooks/useDeepSeshTimer'
+import { useCvDetection } from '../hooks/useCvDetection'
 import type { BrowserActivityPayload } from '../../shared/browserActivity'
 import type { DesktopActivityPayload } from '../../shared/focusMonitoring'
 import type {
@@ -28,10 +29,15 @@ export default function DeepSeshPage() {
     useState<BrowserActivityPayload | null>(null)
   const [desktopActivity, setDesktopActivity] =
     useState<DesktopActivityPayload | null>(null)
+  // Runs the webcam through the CV worker while a session is active, so phone
+  // detection (and live gaze) feed the focus monitor.
+  const camera = useCvDetection(timer.isSessionActive)
   const focusMonitor = useFocusMonitoringSession({
     isSessionActive: timer.isSessionActive,
     browserActivity,
     desktopActivity,
+    phoneDetected: camera.phone?.status === 'detected',
+    lookingAway: camera.gaze?.status === 'distracted',
   })
   const shouldShowReviewScreen =
     !timer.isSessionActive &&
@@ -225,7 +231,7 @@ export default function DeepSeshPage() {
             </div>
 
             {timer.isSessionActive && (
-              <FocusMonitorPanel focusMonitor={focusMonitor} />
+              <FocusMonitorPanel focusMonitor={focusMonitor} camera={camera} />
             )}
           </section>
 

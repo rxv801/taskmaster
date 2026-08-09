@@ -67,11 +67,15 @@ const isCameraConnected = cameraStatus === "connected";
               playsInline
               muted
             />
-            <div className="camera-preview-placeholder" aria-hidden="true">
-              <div className="camera-placeholder-lens" />
-              <div className="camera-placeholder-base" />
-            </div>
-            <p className="camera-preview-label muted-text">Preview placeholder</p>
+            {!isCameraConnected && (
+              <div className="camera-preview-placeholder" aria-hidden="true">
+                <div className="camera-placeholder-lens" />
+                <div className="camera-placeholder-base" />
+              </div>
+            )}
+            {isCameraConnected && (
+              <p className="camera-preview-label muted-text">Live preview</p>
+            )}
           </div>
 
           <label className="camera-select-field">
