@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('taskmaster', {
     ipcRenderer.send('taskmaster:desktop-monitoring-pause'),
   stopDesktopMonitoring: () =>
     ipcRenderer.send('taskmaster:desktop-monitoring-stop'),
+  notifyFocusWarning: (warning) =>
+    ipcRenderer.send('taskmaster:focus-warning', warning),
   onDesktopActivity: (callback) => {
     const listener = (_event, activity) => callback(activity)
 

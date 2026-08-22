@@ -17,7 +17,7 @@ import {
   type BrowserActivityRuleStatus,
 } from './useFocusEnvironmentSettings'
 
-const WARNING_DELAY_MS = 3000
+const WARNING_DELAY_MS = 10_000
 
 type UseFocusMonitoringSessionOptions = {
   isSessionActive: boolean
@@ -82,6 +82,7 @@ export function useFocusMonitoringSession({
     status: 'unknown',
     reason: 'No activity detected yet.',
   })
+  const lastNotificationKeyRef = useRef<string | null>(null)
 
   const activity = useMemo(() => {
     return getCurrentActivity({
@@ -107,6 +108,26 @@ export function useFocusMonitoringSession({
     warningStartedAt !== null &&
     now - warningStartedAt >= WARNING_DELAY_MS
 
+  /* Sends one native notification per sustained blocked activity. */
+  useEffect(() => {
+    if (!shouldShowWarning || !activity) {
+      return
+    }
+
+    if (lastNotificationKeyRef.current === activity.key) {
+      return
+    }
+
+    lastNotificationKeyRef.current = activity.key
+    window.taskmaster?.notifyFocusWarning({
+      title:
+        activity.kind === 'browser-page'
+          ? 'Distracting browser activity'
+          : 'Distracting app',
+      body: classification.reason,
+    })
+  }, [activity, classification.reason, shouldShowWarning])
+
   const getMostCommonDistractionLabel = useCallback(() => {
     return Object.entries(distractionCountsRef.current).sort(
       ([, leftCount], [, rightCount]) => rightCount - leftCount,
@@ -119,6 +140,7 @@ export function useFocusMonitoringSession({
 
       if (!activeDistraction) {
         setWarningStartedAt(null)
+        lastNotificationKeyRef.current = null
         return
       }
 
@@ -129,6 +151,7 @@ export function useFocusMonitoringSession({
 
       activeDistractionRef.current = null
       setWarningStartedAt(null)
+      lastNotificationKeyRef.current = null
       setStats((currentStats) => ({
         ...currentStats,
         distractedSeconds: currentStats.distractedSeconds + durationSeconds,
@@ -269,6 +292,7 @@ export function useFocusMonitoringSession({
         setHasCompletedSessionSummary(false)
         setStats(initialStats)
         setWarningStartedAt(null)
+        lastNotificationKeyRef.current = null
         activeDistractionRef.current = null
         distractionCountsRef.current = {}
       }, 0)
@@ -283,6 +307,7 @@ export function useFocusMonitoringSession({
         closeActiveDistraction(Date.now())
         setHasCompletedSessionSummary(true)
         setWarningStartedAt(null)
+        lastNotificationKeyRef.current = null
       }, 0)
 
       return () => {

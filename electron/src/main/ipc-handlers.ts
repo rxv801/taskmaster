@@ -13,6 +13,7 @@ import {
   getLatestBrowserActivity,
   setBrowserMonitoringActive,
 } from './browser-activity-bridge.ts'
+import { notifyFocusDistraction } from './notifier.ts'
 
 export function registerIpcHandlers() {
   ipcMain.removeHandler('taskmaster:detect-common-apps')
@@ -20,6 +21,7 @@ export function registerIpcHandlers() {
   ipcMain.removeAllListeners('taskmaster:desktop-monitoring-start')
   ipcMain.removeAllListeners('taskmaster:desktop-monitoring-pause')
   ipcMain.removeAllListeners('taskmaster:desktop-monitoring-stop')
+  ipcMain.removeAllListeners('taskmaster:focus-warning')
 
   ipcMain.handle('taskmaster:detect-common-apps', () => {
     const detectedApps = detectCommonApps()
@@ -74,4 +76,11 @@ export function registerIpcHandlers() {
   ipcMain.on('taskmaster:desktop-monitoring-stop', () => {
     stopDesktopActivityMonitoring()
   })
+
+  ipcMain.on(
+    'taskmaster:focus-warning',
+    (_event, warning: { title: string; body: string }) => {
+      notifyFocusDistraction(warning)
+    },
+  )
 }

@@ -27,6 +27,7 @@ declare global {
       startDesktopMonitoring: () => void
       pauseDesktopMonitoring: () => void
       stopDesktopMonitoring: () => void
+      notifyFocusWarning: (warning: { title: string; body: string }) => void
       onDesktopActivity: (callback: (activity: DesktopActivityPayload) => void) => () => void
       onBrowserActivity: (callback: (activity: BrowserActivityPayload) => void) => () => void
       onMiniTimerState: (callback: (state: MiniTimerState | null) => void) => () => void

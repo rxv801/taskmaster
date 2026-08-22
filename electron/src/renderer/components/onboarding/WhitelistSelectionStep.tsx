@@ -172,7 +172,31 @@ export default function FocusEnvironmentStep({
                   setBlockSelectedBrowser(event.target.checked)
                 }
               />
-              <span>Block selected browser during focus sessions</span>
+              <span className="browser-block-toggle-copy">
+                <strong>Selected browser</strong>
+                <small>
+                  {settings.blockSelectedBrowser
+                    ? 'Blocked during focus sessions'
+                    : 'Allowed, with website rules applied'}
+                </small>
+              </span>
+              <span
+                className={`focus-app-rule-status focus-app-rule-status--${
+                  settings.blockSelectedBrowser ? 'blocked' : 'allowed'
+                }`}
+              >
+                {settings.blockSelectedBrowser ? 'Blocked' : 'Allowed'}
+              </span>
+              <span
+                className={`focus-app-toggle browser-block-switch ${
+                  settings.blockSelectedBrowser
+                    ? 'focus-app-toggle--blocked'
+                    : ''
+                }`}
+                aria-hidden="true"
+              >
+                <span />
+              </span>
             </label>
           </div>
 

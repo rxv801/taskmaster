@@ -7,6 +7,7 @@ import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
+import SettingsPage from './SettingsPage'
 import {
   useFocusMonitoringSession,
 } from '../hooks/useFocusMonitoringSession'
@@ -19,7 +20,13 @@ import type {
 } from '../hooks/useFocusEnvironmentSettings'
 import '../styles/deepSesh.css'
 
-export default function DeepSeshPage() {
+type DeepSeshPageProps = {
+  onOpenOnboardingStep: (step: number) => void
+}
+
+export default function DeepSeshPage({
+  onOpenOnboardingStep,
+}: DeepSeshPageProps) {
   const timer = useDeepSeshTimer()
   const pauseTimer = timer.pause
   const resumeTimer = timer.resume
@@ -28,6 +35,7 @@ export default function DeepSeshPage() {
     useState<BrowserActivityPayload | null>(null)
   const [desktopActivity, setDesktopActivity] =
     useState<DesktopActivityPayload | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const focusMonitor = useFocusMonitoringSession({
     isSessionActive: timer.isSessionActive,
     browserActivity,
@@ -151,6 +159,16 @@ export default function DeepSeshPage() {
     }
   }
 
+  if (isSettingsOpen) {
+    return (
+      <SettingsPage
+        onBack={() => setIsSettingsOpen(false)}
+        onOpenCameraSetup={() => onOpenOnboardingStep(1)}
+        onOpenFocusRules={() => onOpenOnboardingStep(4)}
+        onRerunSetup={() => onOpenOnboardingStep(0)}
+      />
+    )
+  }
 
   return (
     <section className={`deep-sesh-screen ${layoutClass}`}>
@@ -163,7 +181,13 @@ export default function DeepSeshPage() {
         type="button"
         className="deep-sesh-edit-button secondary-button"
         aria-label="Edit setup"
-        title="Edit setup"
+        title={
+          timer.isSessionActive
+            ? 'Settings unavailable during a session'
+            : 'Edit setup'
+        }
+        disabled={timer.isSessionActive}
+        onClick={() => setIsSettingsOpen(true)}
       >
         <svg
           aria-hidden="true"

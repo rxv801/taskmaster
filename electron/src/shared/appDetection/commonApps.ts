@@ -52,6 +52,40 @@ export const COMMON_APPS: CommonAppDefinition[] = [
     defaultStatus: 'allowed',
   },
   {
+    id: 'file-explorer',
+    displayName: 'File Explorer',
+    category: 'productivity',
+    executableNames: ['explorer.exe'],
+    commonWindowsPaths: [
+      '%WINDIR%\\explorer.exe',
+    ],
+    commonMacPaths: [],
+    defaultStatus: 'allowed',
+  },
+  {
+    id: 'mac-finder',
+    displayName: 'Finder',
+    category: 'productivity',
+    executableNames: [],
+    commonWindowsPaths: [],
+    commonMacPaths: [
+      '/System/Library/CoreServices/Finder.app',
+    ],
+    defaultStatus: 'allowed',
+  },
+  {
+    id: 'mac-terminal',
+    displayName: 'Terminal',
+    category: 'productivity',
+    executableNames: [],
+    commonWindowsPaths: [],
+    commonMacPaths: [
+      '/System/Applications/Utilities/Terminal.app',
+      '/Applications/Utilities/Terminal.app',
+    ],
+    defaultStatus: 'allowed',
+  },
+  {
     id: 'notion',
     displayName: 'Notion',
     category: 'productivity',
