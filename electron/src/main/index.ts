@@ -11,6 +11,7 @@ import {
 import { registerIpcHandlers } from './ipc-handlers.ts'
 import { stopPythonWorker } from './python-bridge.ts'
 import trayIconPath from './tray-icon.png?asset'
+import appIconPath from '../../resources/app-icon.png?asset'
 
 // __dirname is provided by electron-vite's module banner in the bundled output.
 
@@ -64,6 +65,7 @@ function createWindow() {
     height: 800,
     minWidth: 1000,
     minHeight: 700,
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
@@ -103,6 +105,7 @@ function createMiniTimerWindow() {
     resizable: true,
     alwaysOnTop: isMiniTimerPinned,
     skipTaskbar: true,
+    icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
       nodeIntegration: false,
