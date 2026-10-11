@@ -1,8 +1,8 @@
 /**
  * In-app Taskmaster settings section opened from the Deep Sesh cog.
  *
- * It starts small on purpose: each action sends the user back to the existing
- * onboarding screens that already own camera, app, and browser configuration.
+ * Camera and focus-rule edits reuse configuration screens and return here
+ * when finished. Guided setup restarts the complete onboarding flow.
  */
 
 import '../styles/settings.css'
@@ -49,7 +49,7 @@ export default function SettingsPage({
             <span className="settings-section-kicker">Camera</span>
             <h2>Camera setup</h2>
             <p className="muted-text">
-              Choose the camera and rerun the local face and phone checks.
+              Choose and preview the camera used during focus sessions.
             </p>
           </div>
           <button className="secondary-button" type="button" onClick={onOpenCameraSetup}>

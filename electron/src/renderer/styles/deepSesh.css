@@ -52,13 +52,11 @@
 }
 
 .deep-sesh-edit-icon {
-  width: 1.15rem;
-  height: 1.15rem;
-  fill: none;
-  stroke: currentColor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.8;
+  width: 1.85rem;
+  height: 1.85rem;
+  object-fit: contain;
+  /* The source cog is black; invert it for contrast on the dark button. */
+  filter: invert(1);
 }
 
 .deep-sesh-shell {

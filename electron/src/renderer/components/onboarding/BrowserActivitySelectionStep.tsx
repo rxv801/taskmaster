@@ -18,6 +18,8 @@ import type {
 type BrowserActivitySelectionStepProps = {
   onBack: () => void
   onContinue: () => void
+  continueLabel?: string
+  stepLabel?: string
 }
 
 type BrowserActivityRuleSectionProps = {
@@ -107,6 +109,8 @@ function BrowserActivityRuleSection({
 export default function BrowserActivitySelectionStep({
   onBack,
   onContinue,
+  continueLabel = 'Continue',
+  stepLabel = 'Step 6',
 }: BrowserActivitySelectionStepProps) {
     const {
     blockedBrowserActivityRules,
@@ -126,7 +130,7 @@ export default function BrowserActivitySelectionStep({
     }
     return (
         <section className="onboarding-screen focus-environment-screen browser-activity-screen">
-        <p className="status-pill onboarding-step-pill">Step 6</p>
+        <p className="status-pill onboarding-step-pill">{stepLabel}</p>
 
         <div className="focus-environment-layout">
             <header className="focus-environment-header">
@@ -179,7 +183,7 @@ export default function BrowserActivitySelectionStep({
             </button>
 
             <button className="primary-button" type="button" onClick={handleContinue}>
-                Continue
+                {continueLabel}
             </button>
             </div>
         </div>

@@ -14,6 +14,8 @@ import { useCameraDevices } from "../../hooks/useCameraDevices";
 type CameraSetupStepProps = {
   onBack: () => void
   onContinue: () => void
+  continueLabel?: string
+  stepLabel?: string
 }
 
 // === UI for camera onboarding page ===
@@ -21,6 +23,8 @@ type CameraSetupStepProps = {
 export default function CameraSetupStep({
   onBack,
   onContinue,
+  continueLabel = 'Continue',
+  stepLabel = 'Step 2',
 }: CameraSetupStepProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -56,7 +60,7 @@ const isCameraConnected = cameraStatus === "connected";
 
   return (
     <section className="onboarding-screen camera-setup-screen">
-      <p className="status-pill onboarding-step-pill">Step 2</p>
+      <p className="status-pill onboarding-step-pill">{stepLabel}</p>
       <div className="camera-setup-layout">
 
         <div className="camera-setup-panel surface-card">
@@ -127,7 +131,7 @@ const isCameraConnected = cameraStatus === "connected";
             Back
           </button>
           <button className="primary-button" type="button" onClick={onContinue} disabled={!isCameraConnected}>
-            Continue
+            {continueLabel}
           </button>
         </div>
       </div>
