@@ -121,7 +121,7 @@ export default function OnboardingPage() {
       )
     }
 
-    return <MenuPage />
+    return <MenuPage onOpenOnboardingStep={goToStep} />
   }
 
   const lightState = lightStateByStep[step] ?? 'off'

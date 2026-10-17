@@ -7,6 +7,11 @@ import DeepSeshSetupPanel from '../components/deepSesh/DeepSeshSetupPanel'
 import DeepSeshTimerCard from '../components/deepSesh/DeepSeshTimerCard'
 import FocusEnvironmentSummary from '../components/deepSesh/FocusEnvironmentSummary'
 import FocusMonitorPanel from '../components/deepSesh/FocusMonitorPanel'
+import SettingsPage from './SettingsPage'
+import CameraSetupStep from '../components/onboarding/OnboardingCameraSetup'
+import FocusEnvironmentStep from '../components/onboarding/WhitelistSelectionStep'
+import BrowserActivitySelectionStep from '../components/onboarding/BrowserActivitySelectionStep'
+import settingsCog from '../assets/icons/setting.svg'
 import {
   useFocusMonitoringSession,
 } from '../hooks/useFocusMonitoringSession'
@@ -20,7 +25,13 @@ import type {
 } from '../hooks/useFocusEnvironmentSettings'
 import '../styles/deepSesh.css'
 
-export default function DeepSeshPage() {
+type DeepSeshPageProps = {
+  onOpenOnboardingStep: (step: number) => void
+}
+
+export default function DeepSeshPage({
+  onOpenOnboardingStep,
+}: DeepSeshPageProps) {
   const timer = useDeepSeshTimer()
   const pauseTimer = timer.pause
   const resumeTimer = timer.resume
@@ -29,6 +40,9 @@ export default function DeepSeshPage() {
     useState<BrowserActivityPayload | null>(null)
   const [desktopActivity, setDesktopActivity] =
     useState<DesktopActivityPayload | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  // Settings edits reuse configuration screens without restarting onboarding.
+  const [settingsScreen, setSettingsScreen] = useState<'menu' | 'camera' | 'apps' | 'browser'>('menu')
   // Runs the webcam through the CV worker while a session is active, so phone
   // detection (and live gaze) feed the focus monitor.
   const camera = useCvDetection(timer.isSessionActive)
@@ -157,6 +171,46 @@ export default function DeepSeshPage() {
     }
   }
 
+  if (isSettingsOpen) {
+    const returnToSettings = () => setSettingsScreen('menu')
+    if (settingsScreen === 'camera') {
+      return (
+        <CameraSetupStep
+          onBack={returnToSettings}
+          onContinue={returnToSettings}
+          continueLabel="Finish"
+          stepLabel="Camera settings"
+        />
+      )
+    }
+    if (settingsScreen === 'apps') {
+      return (
+        <FocusEnvironmentStep
+          onBack={returnToSettings}
+          onContinue={() => setSettingsScreen('browser')}
+          stepLabel="App settings"
+        />
+      )
+    }
+    if (settingsScreen === 'browser') {
+      return (
+        <BrowserActivitySelectionStep
+          onBack={() => setSettingsScreen('apps')}
+          onContinue={returnToSettings}
+          continueLabel="Finish"
+          stepLabel="Browser settings"
+        />
+      )
+    }
+    return (
+      <SettingsPage
+        onBack={() => setIsSettingsOpen(false)}
+        onOpenCameraSetup={() => setSettingsScreen('camera')}
+        onOpenFocusRules={() => setSettingsScreen('apps')}
+        onRerunSetup={() => onOpenOnboardingStep(0)}
+      />
+    )
+  }
 
   return (
     <section className={`deep-sesh-screen ${layoutClass}`}>
@@ -169,16 +223,21 @@ export default function DeepSeshPage() {
         type="button"
         className="deep-sesh-edit-button secondary-button"
         aria-label="Edit setup"
-        title="Edit setup"
+        title={
+          timer.isSessionActive
+            ? 'Settings unavailable during a session'
+            : 'Edit setup'
+        }
+        disabled={timer.isSessionActive}
+        onClick={() => setIsSettingsOpen(true)}
       >
-        <svg
+        <img
+          src={settingsCog}
+          alt=""
           aria-hidden="true"
-          viewBox="0 0 24 24"
           className="deep-sesh-edit-icon"
-        >
-          <path d="M12 8.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z" />
-          <path d="M19.43 12.98c.04-.32.07-.65.07-.98s-.03-.66-.07-.98l2.06-1.61-1.95-3.38-2.43.98a7.57 7.57 0 0 0-1.7-.98L15.04 3h-3.9l-.37 3.03c-.6.24-1.17.57-1.7.98l-2.43-.98-1.95 3.38 2.06 1.61c-.04.32-.07.65-.07.98s.03.66.07.98l-2.06 1.61 1.95 3.38 2.43-.98c.53.41 1.1.74 1.7.98l.37 3.03h3.9l.37-3.03c.6-.24 1.17-.57 1.7-.98l2.43.98 1.95-3.38-2.06-1.61Z" />
-        </svg>
+          draggable={false}
+        />
       </button>
 
       <div

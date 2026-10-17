@@ -3,11 +3,12 @@
  *
  * Lets the user confirm that the gaze module can actually see their face. It
  * streams the camera to the Python worker (via useCvDetection) and lights up a
- * green indicator when a face is detected. The check is informational only —
- * Continue is never blocked, so the user can move on either way.
+ * green indicator when a face is detected. Continue waits for the detector to
+ * connect, then falls back after a short timeout so setup cannot get stuck.
  */
 import { useEffect, useRef } from "react";
 import { useCvDetection } from "../../hooks/useCvDetection";
+import { useDetectorContinueGate } from "../../hooks/useDetectorContinueGate";
 
 type FaceCheckStepProps = {
   onBack: () => void;
@@ -22,6 +23,7 @@ export default function FaceCheckStep({
 
   // Run detection while this screen is mounted.
   const { stream, connected, gaze } = useCvDetection(true);
+  const { canContinue, hasTimedOut } = useDetectorContinueGate(connected);
 
   // The check passes only when the user is actually LOOKING AT THE SCREEN, not
   // just when a face is present. The gaze module reports status "focused" when
@@ -79,15 +81,26 @@ export default function FaceCheckStep({
           </div>
           <p className="camera-setup-explainer muted-text">
             Look at your screen — the indicator turns green when you're looking
-            at it. You can continue even if it doesn't.
+            at it. Continue unlocks once the detector connects.
           </p>
+          {hasTimedOut && !connected && (
+            <p className="camera-warning-note">
+              The detector did not connect in time. You can continue setup, but
+              camera focus checks may not work until the CV worker starts.
+            </p>
+          )}
         </header>
 
         <div className="onboarding-actions onboarding-fixed-actions">
           <button className="secondary-button" type="button" onClick={onBack}>
             Back
           </button>
-          <button className="primary-button" type="button" onClick={onContinue}>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={onContinue}
+            disabled={!canContinue}
+          >
             Continue
           </button>
         </div>

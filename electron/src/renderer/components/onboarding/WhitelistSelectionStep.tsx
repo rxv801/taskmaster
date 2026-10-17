@@ -20,6 +20,7 @@ import type {
 type FocusEnvironmentStepProps = {
   onBack: () => void
   onContinue: () => void
+  stepLabel?: string
 }
 
 type FocusAppRuleSectionProps = {
@@ -103,6 +104,7 @@ function FocusAppRuleSection({
 export default function FocusEnvironmentStep({
   onBack,
   onContinue,
+  stepLabel = 'Step 5',
 }: FocusEnvironmentStepProps) {
   const {
     settings,
@@ -128,7 +130,7 @@ export default function FocusEnvironmentStep({
 
   return (
     <section className="onboarding-screen focus-environment-screen">
-      <p className="status-pill onboarding-step-pill">Step 5</p>
+      <p className="status-pill onboarding-step-pill">{stepLabel}</p>
 
       <div className="focus-environment-layout">
         <header className="focus-environment-header">
@@ -172,7 +174,31 @@ export default function FocusEnvironmentStep({
                   setBlockSelectedBrowser(event.target.checked)
                 }
               />
-              <span>Block selected browser during focus sessions</span>
+              <span className="browser-block-toggle-copy">
+                <strong>Selected browser</strong>
+                <small>
+                  {settings.blockSelectedBrowser
+                    ? 'Blocked during focus sessions'
+                    : 'Allowed, with website rules applied'}
+                </small>
+              </span>
+              <span
+                className={`focus-app-rule-status focus-app-rule-status--${
+                  settings.blockSelectedBrowser ? 'blocked' : 'allowed'
+                }`}
+              >
+                {settings.blockSelectedBrowser ? 'Blocked' : 'Allowed'}
+              </span>
+              <span
+                className={`focus-app-toggle browser-block-switch ${
+                  settings.blockSelectedBrowser
+                    ? 'focus-app-toggle--blocked'
+                    : ''
+                }`}
+                aria-hidden="true"
+              >
+                <span />
+              </span>
             </label>
           </div>
 

@@ -1,8 +1,8 @@
 /**
  * Final onboarding options screen.
  *
- * This screen is currently a placeholder for future focus-session guardrails.
- * The options shown here are not fully wired into session behavior yet.
+ * This screen explains which focus-session guardrails are active today and
+ * keeps future blocking ideas marked as coming soon.
  */
 type DistractionOptionsStepProps = {
   onBack: () => void
@@ -28,14 +28,15 @@ export default function DistractionOptionsStep({
             </p>
           </div>
           <p className="focus-environment-explainer muted-text">
-            These options are placeholders for future app and browser behavior.
+            Taskmaster can warn you after a distraction stays active for 10
+            seconds.
           </p>
         </header>
 
         <section className="focus-settings-card distraction-card surface-card">
           <div className="focus-card-header">
             <h2>Session guardrails</h2>
-            <p className="muted-text">Future rules for focus session behavior.</p>
+            <p className="muted-text">Warnings use your system notifications.</p>
           </div>
 
           <div className="distraction-options">

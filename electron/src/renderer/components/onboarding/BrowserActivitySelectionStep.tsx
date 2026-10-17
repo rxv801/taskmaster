@@ -18,6 +18,8 @@ import type {
 type BrowserActivitySelectionStepProps = {
   onBack: () => void
   onContinue: () => void
+  continueLabel?: string
+  stepLabel?: string
 }
 
 type BrowserActivityRuleSectionProps = {
@@ -63,9 +65,6 @@ function BrowserActivityRuleSection({
             <div className="focus-app-rule-row" key={rule.id}>
               <div className="browser-activity-rule-copy">
                 <span className="focus-app-rule-name">{rule.label}</span>
-                <span className="browser-activity-rule-description">
-                  {rule.description}
-                </span>
               </div>
 
               <span
@@ -110,6 +109,8 @@ function BrowserActivityRuleSection({
 export default function BrowserActivitySelectionStep({
   onBack,
   onContinue,
+  continueLabel = 'Continue',
+  stepLabel = 'Step 6',
 }: BrowserActivitySelectionStepProps) {
     const {
     blockedBrowserActivityRules,
@@ -128,8 +129,8 @@ export default function BrowserActivitySelectionStep({
         onContinue()
     }
     return (
-        <section className="onboarding-screen focus-environment-screen">
-        <p className="status-pill onboarding-step-pill">Step 6</p>
+        <section className="onboarding-screen focus-environment-screen browser-activity-screen">
+        <p className="status-pill onboarding-step-pill">{stepLabel}</p>
 
         <div className="focus-environment-layout">
             <header className="focus-environment-header">
@@ -143,18 +144,13 @@ export default function BrowserActivitySelectionStep({
                 </p>
             </div>
 
-            <p className="focus-environment-explainer muted-text">
-                For the MVP, Taskmaster will estimate browser activity from the
-                active window title, such as “YouTube - Google Chrome”.
-            </p>
             </header>
 
-            <section className="allowed-environment-panel surface-card">
+            <section className="allowed-environment-panel browser-activity-panel surface-card">
             <div className="focus-learning-note">
                 <p>
-                These websites do not need to be installed. They are common page
-                patterns that Taskmaster can later match while your browser is
-                open.
+                Pick the default website rules Taskmaster should use during
+                focus sessions.
                 </p>
             </div>
 
@@ -187,7 +183,7 @@ export default function BrowserActivitySelectionStep({
             </button>
 
             <button className="primary-button" type="button" onClick={handleContinue}>
-                Continue
+                {continueLabel}
             </button>
             </div>
         </div>

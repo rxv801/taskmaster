@@ -3,6 +3,10 @@
 
 import DeepSeshPage from './DeepSeshPage'
 
-export default function MenuPage() {
-  return <DeepSeshPage />
+type MenuPageProps = {
+  onOpenOnboardingStep: (step: number) => void
+}
+
+export default function MenuPage({ onOpenOnboardingStep }: MenuPageProps) {
+  return <DeepSeshPage onOpenOnboardingStep={onOpenOnboardingStep} />
 }

@@ -3,11 +3,12 @@
  *
  * Lets the user confirm that the phone module works by holding their phone up
  * to the camera. Streams the camera to the Python worker (via useCvDetection)
- * and lights up a green indicator when a phone is detected. Informational only
- * — Continue is never blocked.
+ * and lights up a green indicator when a phone is detected. Continue waits for
+ * the detector connection, then falls back after a short timeout.
  */
 import { useEffect, useRef } from "react";
 import { useCvDetection } from "../../hooks/useCvDetection";
+import { useDetectorContinueGate } from "../../hooks/useDetectorContinueGate";
 
 type PhoneCheckStepProps = {
   onBack: () => void;
@@ -22,6 +23,7 @@ export default function PhoneCheckStep({
 
   // Run detection while this screen is mounted.
   const { stream, connected, phone } = useCvDetection(true);
+  const { canContinue, hasTimedOut } = useDetectorContinueGate(connected);
 
   // The phone module reports status "detected" when it sees a phone.
   const phoneDetected = phone !== null && phone.status === "detected";
@@ -76,15 +78,26 @@ export default function PhoneCheckStep({
           </div>
           <p className="camera-setup-explainer muted-text">
             Hold your phone up to the camera — the indicator turns green when
-            it's detected. You can continue even if it doesn't.
+            it's detected. Continue unlocks once the detector connects.
           </p>
+          {hasTimedOut && !connected && (
+            <p className="camera-warning-note">
+              The detector did not connect in time. You can continue setup, but
+              phone checks may not work until the CV worker starts.
+            </p>
+          )}
         </header>
 
         <div className="onboarding-actions onboarding-fixed-actions">
           <button className="secondary-button" type="button" onClick={onBack}>
             Back
           </button>
-          <button className="primary-button" type="button" onClick={onContinue}>
+          <button
+            className="primary-button"
+            type="button"
+            onClick={onContinue}
+            disabled={!canContinue}
+          >
             Continue
           </button>
         </div>
