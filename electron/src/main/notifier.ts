@@ -21,6 +21,7 @@ export function notifyFocusDistraction({
   new Notification({
     title,
     body,
-    silent: false,
+    // The renderer owns the looping distraction sound and stops it on recovery.
+    silent: true,
   }).show()
 }
