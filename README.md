@@ -1,6 +1,6 @@
 # Taskmaster
 
-A desktop productivity app that uses computer vision to keep you focused. It detects if you're looking at the screen, spots phone usage, monitors app activity, and nudges you back on track with notifications.
+A desktop productivity app that uses computer vision to keep you focused. It detects if you're looking at the screen, spots phone usage, monitors app activity, and nudges you back on track with notifications and sound alerts.
 
 ## Architecture
 
@@ -40,7 +40,21 @@ Electron (TypeScript)                    Python (CV Worker)
 - **Gaze detection** — MediaPipe FaceLandmarker reads head pose (yaw/pitch) to tell if you're looking at the screen
 - **Phone detection** — a YOLOX object-detection model (run locally via ONNX Runtime) spots a phone in frame
 - **App activity monitor** — tracks the active window and flags disallowed apps during focus sessions
-- **Focus notifications** — system notification when you've been distracted for too long
+- **Distraction alerts** — a live 10-second countdown followed by a looping sound and a system notification when a distraction continues
+
+### Distraction alerts
+
+During a running focus block, using a blocked app or website, detecting a phone,
+or looking away starts a 10-second countdown in the focus monitor. If the
+distraction continues, the alert sound loops until focus returns. Returning to
+focus stops the sound immediately and rewinds it; the next distraction starts a
+fresh countdown and plays the sound from the beginning.
+
+Alerts stop during a pause, a Pomodoro break, or when the session ends. The
+countdown and sound share one timer, which continues while Taskmaster is in the
+background. Native notifications are silent to avoid overlapping the alert sound.
+The sound is bundled with the app, so playback does not require an internet
+connection. Its credit is shown in Settings and in the acknowledgements below.
 
 ## Project Structure
 
@@ -138,6 +152,25 @@ source .venv/bin/activate
 uvicorn main:app --port 8765       # health check at http://127.0.0.1:8765/
 ```
 
+### Checking the distraction alert
+
+From the `electron/` directory:
+
+```bash
+npm run build
+node --test tests/distractionSound.test.ts
+```
+
+The test command needs Node.js 24 or newer for direct TypeScript execution.
+It checks the delay, countdown alignment, cancellation before playback, stopping
+and rewinding, starting a new distraction, and handling playback errors.
+
+To try it in the app, run `npm run dev`, start a focus session, and stay on a
+blocked app or website for 10 seconds. The panel counts down before the sound
+starts. Return to an allowed activity to stop it, then repeat to check that both
+the countdown and sound start over. Phone and gaze distractions use the same
+alert path. Pausing, stopping, and entering a Pomodoro break also stop the sound.
+
 ## Building the desktop app (macOS)
 
 To produce a double-clickable `Taskmaster.app` (and a `.dmg`) that runs on a Mac
@@ -212,6 +245,19 @@ Notes:
   **Build Tools for Visual Studio** with the **Desktop development with C++**
   workload installed.
 
+## Acknowledgements
+
+The distraction alert uses **“beep-loop” by DongKingKong (Freesound)**, via
+[Pixabay](https://pixabay.com/sound-effects/musical-beep-loop-101292/), under the
+[Pixabay Content License](https://pixabay.com/service/license-summary/).
+
+The bundled file is
+[`distraction-alert.mp3`](electron/src/renderer/assets/audio/distraction-alert.mp3).
+The original download was named `freesound_community-beep-loop-101292.mp3`.
+See the [audio asset notes](electron/src/renderer/assets/audio/README.md) for the
+source and license details.
+
 ## License
 
-MIT
+App source code: MIT. The bundled sound is covered by the Pixabay Content License
+linked above.

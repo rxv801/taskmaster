@@ -48,6 +48,9 @@ export default function DeepSeshPage({
   const camera = useCvDetection(timer.isSessionActive)
   const focusMonitor = useFocusMonitoringSession({
     isSessionActive: timer.isSessionActive,
+    isFocusTimerRunning:
+      timer.status === 'running' &&
+      (timer.mode !== 'pomodoro' || timer.pomodoroPhase === 'focus'),
     browserActivity,
     desktopActivity,
     phoneDetected: camera.phone?.status === 'detected',

@@ -16,6 +16,7 @@ export default function FocusMonitorPanel({
   const { activity, classification, stats } = focusMonitor
   const isBlocked = classification.status === 'blocked'
   const isWarningVisible = focusMonitor.shouldShowWarning
+  const secondsRemaining = focusMonitor.warningSecondsRemaining
 
   const phoneDetected = camera?.phone?.status === 'detected'
   const lookingAway = camera?.gaze?.status === 'distracted'
@@ -36,8 +37,8 @@ export default function FocusMonitorPanel({
         <span className="status-pill">{getStatusLabel(classification.status)}</span>
         <h2>{activity?.label ?? 'Waiting for activity'}</h2>
         <p className="muted-text">
-          {isBlocked && !isWarningVisible
-            ? `Warning in ${focusMonitor.warningDelaySeconds} seconds if this stays active.`
+          {isBlocked && secondsRemaining !== null && secondsRemaining > 0
+            ? `Warning in ${secondsRemaining} ${secondsRemaining === 1 ? 'second' : 'seconds'} if this stays active.`
             : classification.reason}
         </p>
       </div>

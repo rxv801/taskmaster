@@ -3,6 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { COMMON_APPS } from '../../shared/appDetection/commonApps.ts'
+import { useDistractionSound } from './useDistractionSound'
 import type { BrowserActivityPayload } from '../../shared/browserActivity'
 import type {
   DesktopActivityPayload,
@@ -61,6 +62,7 @@ type CameraDistraction = 'phone' | 'gaze' | null
 
 type UseFocusMonitoringSessionOptions = {
   isSessionActive: boolean
+  isFocusTimerRunning: boolean
   browserActivity: BrowserActivityPayload | null
   desktopActivity: DesktopActivityPayload | null
   // True while the camera currently sees a phone (from the CV worker).
@@ -73,7 +75,7 @@ export type FocusMonitorViewState = {
   activity: FocusActivity | null
   classification: FocusClassification
   shouldShowWarning: boolean
-  warningDelaySeconds: number
+  warningSecondsRemaining: number | null
   unknownActivities: UnknownActivityReviewItem[]
   stats: FocusSessionStats
   hasCompletedSessionSummary: boolean
@@ -101,6 +103,7 @@ const initialStats: FocusSessionStats = {
 /* Creates the focus monitor view model for DeepSeshPage. */
 export function useFocusMonitoringSession({
   isSessionActive,
+  isFocusTimerRunning,
   browserActivity,
   desktopActivity,
   phoneDetected,
@@ -111,8 +114,6 @@ export function useFocusMonitoringSession({
     addAppRule,
     addBrowserActivityRule,
   } = useFocusEnvironmentSettings()
-  const [warningStartedAt, setWarningStartedAt] = useState<number | null>(null)
-  const [now, setNow] = useState(() => Date.now())
   const [unknownActivities, setUnknownActivities] = useState<
     UnknownActivityReviewItem[]
   >([])
@@ -142,6 +143,14 @@ export function useFocusMonitoringSession({
   const baseClassification = useMemo(() => {
     return classifyActivity(baseActivity, settings)
   }, [baseActivity, settings])
+
+  // Use live signals for sound so returning to focus stops it immediately,
+  // while the existing camera grace period still stabilizes the visual stats.
+  const warningSecondsRemaining = useDistractionSound(
+    isFocusTimerRunning &&
+      (phoneDetected || lookingAway || baseClassification.status === 'blocked'),
+    WARNING_DELAY_MS,
+  )
 
   // Latest camera signals, read by the session ticker below. Refs keep the
   // ticker from re-subscribing on every frame; the timestamps drive the grace
@@ -188,14 +197,16 @@ export function useFocusMonitoringSession({
     })
   }, [settings, unknownActivities])
 
-  const shouldShowWarning =
-    classification.status === 'blocked' &&
-    warningStartedAt !== null &&
-    now - warningStartedAt >= WARNING_DELAY_MS
+  const shouldShowWarning = warningSecondsRemaining === 0
 
   /* Sends one native notification per sustained blocked activity. */
   useEffect(() => {
-    if (!shouldShowWarning || !activity) {
+    if (!shouldShowWarning) {
+      lastNotificationKeyRef.current = null
+      return
+    }
+
+    if (!activity) {
       return
     }
 
@@ -224,8 +235,6 @@ export function useFocusMonitoringSession({
       const activeDistraction = activeDistractionRef.current
 
       if (!activeDistraction) {
-        setWarningStartedAt(null)
-        lastNotificationKeyRef.current = null
         return
       }
 
@@ -235,8 +244,6 @@ export function useFocusMonitoringSession({
       )
 
       activeDistractionRef.current = null
-      setWarningStartedAt(null)
-      lastNotificationKeyRef.current = null
       setStats((currentStats) => ({
         ...currentStats,
         distractedSeconds: currentStats.distractedSeconds + durationSeconds,
@@ -248,8 +255,6 @@ export function useFocusMonitoringSession({
 
   const handleBlockedActivity = useCallback(
     (blockedActivity: FocusActivity, tickNow: number) => {
-      setWarningStartedAt((currentStart) => currentStart ?? tickNow)
-
       if (activeDistractionRef.current?.key === blockedActivity.key) {
         return
       }
@@ -310,13 +315,12 @@ export function useFocusMonitoringSession({
     classificationRef.current = baseClassification
   }, [baseActivity, baseClassification])
 
-  /* Ticks one monitoring loop for warning delay, unknown tracking, and stats. */
+  /* Ticks one monitoring loop for unknown tracking and stats. */
   useEffect(() => {
     if (!isSessionActive) return
 
     const intervalId = window.setInterval(() => {
       const tickNow = Date.now()
-      setNow(tickNow)
 
       // Camera distractions come ahead of any app/site, and each stays latched
       // for a short grace period after its last positive frame. A phone in view
@@ -403,7 +407,6 @@ export function useFocusMonitoringSession({
         setSessionStartedAt(Date.now())
         setHasCompletedSessionSummary(false)
         setStats(initialStats)
-        setWarningStartedAt(null)
         lastNotificationKeyRef.current = null
         setCameraDistraction(null)
         activeDistractionRef.current = null
@@ -419,7 +422,6 @@ export function useFocusMonitoringSession({
       const finishSessionId = window.setTimeout(() => {
         closeActiveDistraction(Date.now())
         setHasCompletedSessionSummary(true)
-        setWarningStartedAt(null)
         lastNotificationKeyRef.current = null
       }, 0)
 
@@ -471,7 +473,7 @@ export function useFocusMonitoringSession({
     activity,
     classification,
     shouldShowWarning,
-    warningDelaySeconds: WARNING_DELAY_MS / 1000,
+    warningSecondsRemaining,
     unknownActivities: reviewableUnknownActivities,
     stats: {
       ...stats,

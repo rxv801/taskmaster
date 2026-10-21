@@ -68,6 +68,8 @@ function createWindow() {
     icon: appIconPath,
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.mjs'),
+      // Focus monitoring and alert timers must run while another app is active.
+      backgroundThrottling: false,
       nodeIntegration: false,
       contextIsolation: true,
       // The preload is bundled as an ES module (the app is "type": "module"),

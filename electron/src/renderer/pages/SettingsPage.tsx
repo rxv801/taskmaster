@@ -82,6 +82,17 @@ export default function SettingsPage({
             Rerun setup
           </button>
         </section>
+
+        <section className="settings-section surface-card">
+          <div className="settings-section-copy">
+            <span className="settings-section-kicker">Credits</span>
+            <h2>Distraction alert sound</h2>
+            <p className="muted-text">
+              “beep-loop” by DongKingKong (Freesound), via Pixabay.
+              Used under the Pixabay Content License.
+            </p>
+          </div>
+        </section>
       </main>
     </section>
   )
